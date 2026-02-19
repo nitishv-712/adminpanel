@@ -26,13 +26,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await authApi.login(email, password);
-    const { user: u, accessToken } = res.data.data;
-    if (u.role !== 'admin') throw new Error('Access denied. Admin only.');
-    localStorage.setItem('adminToken', accessToken);
-    localStorage.setItem('adminUser', JSON.stringify(u));
-    setUser(u);
-  };
+  const res = await authApi.login(email, password);
+
+  const { admin, accessToken } = res.data.data;
+
+  console.log('Login response:', res.data);
+
+  if (admin.role !== 'admin' && admin.role !== 'superadmin') {
+    throw new Error('Access denied. Admin only.');
+  }
+
+  localStorage.setItem('adminToken', accessToken);
+  localStorage.setItem('adminUser', JSON.stringify(admin));
+
+  console.log('Logged in user:', admin);
+
+  setUser(admin);
+};
+
 
   const logout = () => {
     localStorage.removeItem('adminToken');

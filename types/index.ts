@@ -4,7 +4,7 @@ export interface User {
   lastName: string;
   email: string;
   phone?: string;
-  role: 'buyer' | 'seller' | 'agent' | 'admin';
+  role: 'buyer' | 'seller' | 'agent' | 'admin' | 'superadmin';
   avatar?: string;
   isVerified: boolean;
   createdAt: string;

@@ -31,8 +31,8 @@ export default api;
 // ─── Auth ────────────────────────────────────────────────────
 export const authApi = {
   login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
-  me: () => api.get('/auth/me'),
+    api.post('/admin/auth/login', { email, password }),
+  me: () => api.get('/admin/auth/me'),
 };
 
 // ─── Stats ───────────────────────────────────────────────────

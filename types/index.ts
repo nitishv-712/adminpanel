@@ -59,9 +59,9 @@ export interface Subscriber {
 }
 
 export interface Stats {
-  totals: { users: number; properties: number; inquiries: number; subscribers: number };
+  totals: { adminUsers: number; webUsers:number; properties: number; inquiries: number; subscribers: number };
   properties: { pending: number; active: number; forSale: number; forRent: number };
-  users: { buyers: number; sellers: number; agents: number };
+  webUsers: { buyers: number; sellers: number; agents: number };
   engagement: { totalViews: number };
   recentUsers: User[];
   recentProperties: Property[];

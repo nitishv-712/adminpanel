@@ -30,7 +30,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     statsApi.get()
-      .then(r => setStats(r.data.data))
+      .then(r => {
+        console.log('Stats response:', r.data.data);
+        return setStats(r.data.data)})
       .finally(() => setLoading(false));
   }, []);
 
@@ -48,9 +50,9 @@ export default function DashboardPage() {
   if (!stats) return <p className="text-ink-500">Failed to load stats.</p>;
 
   const userPieData = [
-    { name: 'Buyers', value: stats.users.buyers },
-    { name: 'Sellers', value: stats.users.sellers },
-    { name: 'Agents', value: stats.users.agents },
+    { name: 'Buyers', value: stats.webUsers.buyers },
+    { name: 'Sellers', value: stats.webUsers.sellers },
+    { name: 'Agents', value: stats.webUsers.agents },
   ];
 
   const propPieData = [
@@ -74,8 +76,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Users" value={fmt(stats.totals.users)} icon={<Users className="w-5 h-5" />} />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <StatCard label="Total Admin Users" value={fmt(stats.totals.adminUsers)} icon={<Users className="w-5 h-5" />} />
+        <StatCard label="Total Web Users" value={fmt(stats.totals.webUsers)} icon={<Users className="w-5 h-5" />} />
         <StatCard label="Properties" value={fmt(stats.totals.properties)} sub={`${stats.properties.pending} pending approval`} icon={<Home className="w-5 h-5" />} />
         <StatCard label="Inquiries" value={fmt(stats.totals.inquiries)} icon={<MessageSquare className="w-5 h-5" />} />
         <StatCard label="Subscribers" value={fmt(stats.totals.subscribers)} icon={<Mail className="w-5 h-5" />} />

@@ -1,13 +1,13 @@
-import Sidebar from "@/components/layout/Sidebar";
-import AuthGuard from "@/components/layout/AuthGuard";
+import AuthGuard from '@/components/layout/AuthGuard';
+import Sidebar from '@/components/layout/Sidebar';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen bg-page-c">
         <Sidebar />
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-8 py-8">
+        <main className="flex-1 overflow-y-auto bg-page-c">
+          <div className="max-w-7xl mx-auto p-6 lg:p-8">
             {children}
           </div>
         </main>

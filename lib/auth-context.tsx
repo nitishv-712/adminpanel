@@ -1,58 +1,66 @@
 'use client';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from '@/types';
-import { authApi } from '@/lib/api';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { adminAuthApi } from './api';
+import { AdminUser } from '@/types';
 
-interface AuthCtx {
-  user: User | null;
+interface AuthContextType {
+  user: AdminUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  isSuperAdmin: boolean;
 }
 
-const Ctx = createContext<AuthCtx>({} as AuthCtx);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser]       = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const didFetch              = useRef(false);
 
+  // On mount: check if a session cookie already exists
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    const stored = localStorage.getItem('adminUser');
-    if (token && stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    setLoading(false);
+    if (didFetch.current) return;
+    didFetch.current = true;
+
+    adminAuthApi.me()
+      .then(res => setUser(res.data.data.admin))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email: string, password: string) => {
-  const res = await authApi.login(email, password);
-
-  const { admin, accessToken } = res.data.data;
-
-  console.log('Login response:', res.data);
-
-  if (admin.role !== 'admin' && admin.role !== 'superadmin') {
-    throw new Error('Access denied. Admin only.');
-  }
-
-  localStorage.setItem('adminToken', accessToken);
-  localStorage.setItem('adminUser', JSON.stringify(admin));
-
-  console.log('Logged in user:', admin);
-
-  setUser(admin);
-};
-
-
-  const logout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
-    setUser(null);
-    window.location.href = '/login';
+    setLoading(true);
+    try {
+      const res = await adminAuthApi.login(email, password);
+      const meRes = await adminAuthApi.me();
+      setUser(meRes.data.data.admin);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return <Ctx.Provider value={{ user, loading, login, logout }}>{children}</Ctx.Provider>;
+  const logout = async () => {
+    try { await adminAuthApi.logout(); } catch {}
+    setUser(null);
+    if (typeof window !== 'undefined') window.location.href = '/login';
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      logout,
+      isSuperAdmin: user?.role === 'superadmin',
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export const useAuth = () => useContext(Ctx);
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}

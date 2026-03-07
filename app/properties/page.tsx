@@ -1,211 +1,326 @@
 'use client';
+import { useDataCache } from '@/lib/data-cache-context';
 import { useEffect, useState, useCallback } from 'react';
 import { propertiesApi } from '@/lib/api';
 import { Property } from '@/types';
 import {
-  PageHeader, StatusBadge, Pagination,
-  ConfirmModal, FilterSelect, SearchInput, Spinner, EmptyState
+  Card, StatusBadge, Button, Input, Select, Modal,
+  ConfirmModal, EmptyState, Spinner, Pagination, Table, Th, Td, Tr,
 } from '@/components/ui';
-import { Trash2, Star, CheckCircle, XCircle, Home, Eye, Heart } from 'lucide-react';
-
-const STATUS_OPTS = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'active', label: 'Active' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'sold', label: 'Sold' },
-  { value: 'archived', label: 'Archived' },
-];
-const TYPE_OPTS = [
-  { value: 'sale', label: 'For Sale' },
-  { value: 'rent', label: 'For Rent' },
-];
-
-function fmtPrice(n: number) {
-  if (n >= 10_000_000) return '₹' + (n / 10_000_000).toFixed(1) + 'Cr';
-  if (n >= 100_000) return '₹' + (n / 100_000).toFixed(1) + 'L';
-  return '₹' + n.toLocaleString('en-IN');
-}
+import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
+import {
+  Home, Search, Edit2, Trash2, Eye, MapPin, Bed, Bath,
+  Square, Star, ToggleLeft, ToggleRight,
+} from 'lucide-react';
 
 export default function PropertiesPage() {
-  const [data, setData] = useState<Property[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [listingType, setListingType] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null);
+  const { get, set, invalidatePrefix } = useDataCache();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [total, setTotal]           = useState(0);
+  const [page, setPage]             = useState(1);
+  const limit                        = 12;
+  const [search, setSearch]         = useState('');
+  const [statusFilter, setStatus]   = useState('');
+  const [typeFilter, setType]       = useState('');
 
-  const load = useCallback(async () => {
+  const [editTarget, setEditTarget]     = useState<Property | null>(null);
+  const [editStatus, setEditStatus]     = useState('');
+  const [editFeatured, setEditFeatured] = useState(false);
+  const [editBadge, setEditBadge]       = useState('');
+  const [saving, setSaving]             = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [deleting, setDeleting]         = useState(false);
+
+  const fetch = useCallback((force = false) => {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (statusFilter) params.status = statusFilter;
+    if (typeFilter) params.listingType = typeFilter;
+    const cacheKey = 'properties:' + JSON.stringify(params);
+    if (!force) {
+      const cached = get<{ data: Property[]; total: number }>(cacheKey);
+      if (cached) { setProperties(cached.data); setTotal(cached.total); setLoading(false); return; }
+    }
     setLoading(true);
-    try {
-      const res = await propertiesApi.list({ page, limit: 15, search: search || undefined, status: status || undefined, listingType: listingType || undefined });
-      const d = res.data;
-      setData(d.data ?? d.properties ?? []);
-      setTotal(d.total ?? 0);
-      setTotalPages(d.totalPages ?? 1);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, status, listingType]);
+    setError('');
+    propertiesApi.list(params)
+      .then(res => {
+        const d = res.data?.data;
+        const result = { data: d?.data ?? [], total: d?.total ?? 0 };
+        set(cacheKey, result);
+        setProperties(result.data);
+        setTotal(result.total);
+      })
+      .catch(err => setError(err.response?.data?.message || 'Failed to load properties'))
+      .finally(() => setLoading(false));
+  }, [page, search, statusFilter, typeFilter, get, set]);
 
-  useEffect(() => { setPage(1); }, [search, status, listingType]);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, typeFilter]);
 
-  const updateProperty = async (id: string, payload: Record<string, unknown>) => {
-    setUpdating(id);
-    try {
-      await propertiesApi.update(id, payload);
-      await load();
-    } finally {
-      setUpdating(null);
-    }
+  const openEdit = (p: Property) => {
+    setEditTarget(p);
+    setEditStatus(p.status);
+    setEditFeatured(p.isFeatured);
+    setEditBadge(p.badge ?? '');
   };
 
-  const deleteProperty = async () => {
+  const handleSave = async () => {
+    if (!editTarget) return;
+    setSaving(true);
+    try {
+      await propertiesApi.update(editTarget._id, {
+        status: editStatus, isFeatured: editFeatured, badge: editBadge || null,
+      });
+      setEditTarget(null);
+      fetch();
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    await propertiesApi.delete(deleteTarget);
-    setDeleteTarget(null);
-    await load();
+    setDeleting(true);
+    try { await propertiesApi.delete(deleteTarget._id); setDeleteTarget(null); invalidatePrefix('properties:'); fetch(true); }
+    finally { setDeleting(false); }
   };
 
-  const owner = (p: Property) => typeof p.owner === 'object' && p.owner
-    ? `${p.owner.firstName} ${p.owner.lastName}`
-    : '—';
+  const totalPages = Math.ceil(total / limit);
+
+  const inputStyle = {
+    backgroundColor: 'var(--input-bg)',
+    border: '1px solid var(--border-strong)',
+    borderRadius: '12px',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  };
 
   return (
-    <div className="animate-fade-in">
-      <PageHeader
-        title="Properties"
-        sub={`${total.toLocaleString()} total listings`}
-      />
+    <div className="space-y-6 animate-fade-in">
 
-      {/* Filters */}
-      <div className="card p-4 mb-5 flex flex-wrap gap-3 items-center">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search title or city…" />
-        <FilterSelect value={status} onChange={setStatus} options={STATUS_OPTS} placeholder="All statuses" />
-        <FilterSelect value={listingType} onChange={setListingType} options={TYPE_OPTS} placeholder="All types" />
-        <div className="ml-auto text-ink-400 text-xs">{total} results</div>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+            PROPERTIES
+          </h1>
+          <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+            Manage all listings
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-display text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>
+            {formatNumber(total)}
+          </p>
+          <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+            Total Listings
+          </p>
+        </div>
       </div>
 
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+            <input
+              placeholder="Search properties or city..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ ...inputStyle, width: '100%', paddingLeft: '36px', paddingRight: '16px', paddingTop: '8px', paddingBottom: '8px' }}
+              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={e => setStatus(e.target.value)}
+            style={{ ...inputStyle, padding: '8px 12px', minWidth: '130px' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
+          >
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+            <option value="rented">Rented</option>
+            <option value="archived">Archived</option>
+          </select>
+          <select
+            value={typeFilter}
+            onChange={e => setType(e.target.value)}
+            style={{ ...inputStyle, padding: '8px 12px', minWidth: '120px' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
+          >
+            <option value="">All Types</option>
+            <option value="sale">For Sale</option>
+            <option value="rent">For Rent</option>
+          </select>
+        </div>
+      </Card>
+
       {/* Table */}
-      <div className="card overflow-hidden">
-        {loading ? <Spinner /> : data.length === 0 ? <EmptyState /> : (
-          <div className="overflow-x-auto">
-            <table className="admin-table">
+      <Card>
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : error ? (
+          <div className="flex justify-center py-16 text-sm" style={{ color: '#f87171' }}>{error}</div>
+        ) : properties.length === 0 ? (
+          <EmptyState icon={<Home className="w-7 h-7" />} title="No Properties" description="No listings match your filters." />
+        ) : (
+          <>
+            <Table>
               <thead>
                 <tr>
-                  <th>Property</th>
-                  <th>Owner</th>
-                  <th>Price</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Stats</th>
-                  <th>Featured</th>
-                  <th className="text-right">Actions</th>
+                  <Th>Property</Th>
+                  <Th>Location</Th>
+                  <Th>Price</Th>
+                  <Th>Details</Th>
+                  <Th>Status</Th>
+                  <Th>Engagement</Th>
+                  <Th>Listed</Th>
+                  <Th />
                 </tr>
               </thead>
               <tbody>
-                {data.map(p => (
-                  <tr key={p._id}>
-                    <td>
+                {properties.map(p => (
+                  <Tr key={p._id}>
+                    <Td>
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-ink-100 overflow-hidden shrink-0">
+                        <div style={{
+                          width: '48px', height: '40px', borderRadius: '8px', flexShrink: 0,
+                          backgroundColor: 'var(--accent-dim)',
+                          border: '1px solid var(--accent-border)',
+                          overflow: 'hidden',
+                        }}>
                           {p.images?.[0] ? (
                             <img src={p.images[0].url} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center"><Home className="w-4 h-4 text-ink-300" /></div>
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Home className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                            </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-500 text-ink-800 text-sm truncate max-w-[180px]">{p.title}</p>
-                          <p className="text-ink-400 text-xs truncate">{p.address?.city}, {p.address?.state}</p>
+                          <p className="text-sm font-medium truncate max-w-[180px]" style={{ color: 'var(--text-primary)' }}>
+                            {p.title}
+                          </p>
+                          {p.isFeatured && (
+                            <span className="flex items-center gap-1 text-[10px]" style={{ color: '#fbbf24' }}>
+                              <Star className="w-2.5 h-2.5" fill="currentColor" /> Featured
+                            </span>
+                          )}
+                          {p.badge && (
+                            <span className="text-[10px]" style={{ color: 'var(--accent)' }}>{p.badge}</span>
+                          )}
                         </div>
                       </div>
-                    </td>
-                    <td className="text-ink-600 text-xs">{owner(p)}</td>
-                    <td className="font-500 text-ink-800 text-sm whitespace-nowrap">{fmtPrice(p.price)}</td>
-                    <td><StatusBadge value={p.listingType} /></td>
-                    <td><StatusBadge value={p.status} /></td>
-                    <td>
-                      <div className="flex items-center gap-3 text-xs text-ink-400">
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{p.views}</span>
-                        <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{p.saves}</span>
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        <MapPin className="w-3 h-3" />{p.address.city}
                       </div>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => updateProperty(p._id, { isFeatured: !p.isFeatured })}
-                        disabled={updating === p._id}
-                        className={`transition-colors ${p.isFeatured ? 'text-gold-500 hover:text-gold-300' : 'text-ink-300 hover:text-gold-400'}`}
-                        title={p.isFeatured ? 'Unfeature' : 'Feature'}
-                      >
-                        <Star className="w-4 h-4" fill={p.isFeatured ? 'currentColor' : 'none'} />
-                      </button>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2 justify-end">
-                        {p.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => updateProperty(p._id, { status: 'active' })}
-                              disabled={updating === p._id}
-                              className="text-emerald-500 hover:text-emerald-700 transition-colors"
-                              title="Approve"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => updateProperty(p._id, { status: 'rejected' })}
-                              disabled={updating === p._id}
-                              className="text-red-400 hover:text-red-600 transition-colors"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {p.status === 'active' && (
-                          <button
-                            onClick={() => updateProperty(p._id, { status: 'archived' })}
-                            disabled={updating === p._id}
-                            className="text-ink-400 hover:text-ink-600 text-xs transition-colors"
-                            title="Archive"
-                          >
-                            Archive
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setDeleteTarget(p._id)}
-                          className="text-red-400 hover:text-red-600 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    </Td>
+                    <Td>
+                      <span className="font-display tracking-wide text-sm" style={{ color: 'var(--accent)' }}>
+                        {formatCurrency(p.price)}
+                      </span>
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>
+                        <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>
+                        <span className="flex items-center gap-1"><Square className="w-3 h-3" />{formatNumber(p.sqft)}</span>
                       </div>
-                    </td>
-                  </tr>
+                    </Td>
+                    <Td>
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge value={p.status} />
+                        <StatusBadge value={p.listingType} />
+                      </div>
+                    </Td>
+                    <Td>
+                      <div className="text-xs space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                        <div className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatNumber(p.views)}</div>
+                        <div>{p.inquiries} inquiries</div>
+                      </div>
+                    </Td>
+                    <Td>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(p.createdAt)}</span>
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(p)}>
+                          <Trash2 className="w-3.5 h-3.5" style={{ color: '#f87171' }} />
+                        </Button>
+                      </div>
+                    </Td>
+                  </Tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </Table>
+            <div className="px-4 pb-4">
+              <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPage={setPage} />
+            </div>
+          </>
         )}
-        {!loading && data.length > 0 && (
-          <div className="px-4 pb-4">
-            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+      </Card>
+
+      {/* Edit Modal */}
+      <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title="Update Property">
+        <div className="space-y-4">
+          <Select label="Status" value={editStatus} onChange={e => setEditStatus(e.target.value)}>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="sold">Sold</option>
+            <option value="rented">Rented</option>
+            <option value="archived">Archived</option>
+          </Select>
+          <Input
+            label="Badge (optional)"
+            value={editBadge}
+            onChange={e => setEditBadge(e.target.value)}
+            placeholder="e.g. Hot Deal, New Launch"
+          />
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px',
+            backgroundColor: 'var(--accent-dim)',
+            border: '1px solid var(--accent-border)',
+            borderRadius: '12px',
+          }}>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Featured Listing</span>
+            <button onClick={() => setEditFeatured(!editFeatured)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              {editFeatured
+                ? <ToggleRight className="w-6 h-6" />
+                : <ToggleLeft className="w-6 h-6" style={{ color: 'var(--text-muted)' }} />
+              }
+            </button>
           </div>
-        )}
-      </div>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setEditTarget(null)}>Cancel</Button>
+            <Button variant="primary" className="flex-1" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmModal
-        open={!!deleteTarget}
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
         title="Delete Property"
-        message="This will permanently remove the listing. This action cannot be undone."
-        onConfirm={deleteProperty}
-        onCancel={() => setDeleteTarget(null)}
-        danger
+        message={`Delete "${deleteTarget?.title}"? This action cannot be undone.`}
+        loading={deleting}
       />
     </div>
   );

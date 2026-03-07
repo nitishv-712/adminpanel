@@ -1,147 +1,211 @@
 'use client';
+import { useDataCache } from '@/lib/data-cache-context';
 import { useEffect, useState, useCallback } from 'react';
 import { newsletterApi } from '@/lib/api';
-import { Subscriber } from '@/types';
+import { Subscriber, PaginatedResponse } from '@/types';
 import {
-  PageHeader, StatusBadge, Pagination,
-  FilterSelect, Spinner, EmptyState
+  Card, StatusBadge, Button, EmptyState, Spinner,
+  Pagination, Table, Th, Td, Tr,
 } from '@/components/ui';
-import { Mail, Download } from 'lucide-react';
-
-const ACTIVE_OPTS = [
-  { value: 'true', label: 'Active' },
-  { value: 'false', label: 'Unsubscribed' },
-];
-
-function fmtDate(s: string) {
-  return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+import { formatDate, formatRelativeTime } from '@/lib/utils';
+import { Mail, Search, Download, CheckCircle, XCircle } from 'lucide-react';
 
 export default function NewsletterPage() {
-  const [data, setData] = useState<Subscriber[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState('');
+  const { get, set } = useDataCache();
+  const [subs, setSubs]           = useState<Subscriber[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [total, setTotal]         = useState(0);
+  const [page, setPage]           = useState(1);
+  const limit                      = 20;
+  const [activeFilter, setActive] = useState<string>('');
+  const [search, setSearch]       = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await newsletterApi.list({ page, limit: 20, active: active || undefined });
-      const d = res.data;
-      setData(d.data ?? []);
-      setTotal(d.total ?? 0);
-      setTotalPages(d.totalPages ?? 1);
-    } finally {
-      setLoading(false);
+  const fetch = useCallback((force = false) => {
+    const params: any = { page, limit };
+    if (activeFilter !== '') params.active = activeFilter;
+    const cacheKey = 'newsletter:' + JSON.stringify(params);
+    if (!force) {
+      const cached = get<{ data: Subscriber[]; total: number }>(cacheKey);
+      if (cached) { setSubs(cached.data); setTotal(cached.total); setLoading(false); return; }
     }
-  }, [page, active]);
+    setLoading(true);
+    newsletterApi.list(params)
+      .then(res => {
+        const d: PaginatedResponse<Subscriber> = res.data.data;
+        set(cacheKey, { data: d.data, total: d.pagination.pages });
+        setSubs(d.data); setTotal(d.pagination.pages);
+      })
+      .finally(() => setLoading(false));
+  }, [page, activeFilter, get, set]);
 
-  useEffect(() => { setPage(1); }, [active]);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { setPage(1); }, [activeFilter]);
 
-  const exportCSV = () => {
-    const csv = ['Email,Status,Date Joined', ...data.map(s =>
-      `${s.email},${s.isActive ? 'Active' : 'Unsubscribed'},${fmtDate(s.createdAt)}`
-    )].join('\n');
+  const filtered = search
+    ? subs.filter(s => s.email.toLowerCase().includes(search.toLowerCase()))
+    : subs;
+
+  const handleExport = () => {
+    const csv = 'Email,Status,Subscribed\n' +
+      subs.map(s => `${s.email},${s.isActive ? 'Active' : 'Inactive'},${formatDate(s.createdAt)}`).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'subscribers.csv'; a.click();
-    URL.revokeObjectURL(url);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href = url; a.download = '99hb-subscribers.csv'; a.click();
   };
 
-  const activeCount = data.filter(s => s.isActive).length;
+  const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="animate-fade-in">
-      <PageHeader
-        title="Newsletter"
-        sub={`${total.toLocaleString()} subscribers`}
-        action={
-          <button
-            onClick={exportCSV}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-ink-900 text-white text-sm hover:bg-ink-800 transition-colors"
+    <div className="space-y-6 animate-fade-in">
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+            NEWSLETTER
+          </h1>
+          <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+            Email subscribers
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="font-display text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>{total}</p>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Subscribers</p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={handleExport}>
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+            <input
+              placeholder="Search email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                paddingLeft: '36px', paddingRight: '16px', paddingTop: '8px', paddingBottom: '8px',
+                backgroundColor: 'var(--input-bg)',
+                border: '1px solid var(--border-strong)',
+                borderRadius: '12px',
+                color: 'var(--text-primary)',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
+            />
+          </div>
+          <select
+            value={activeFilter}
+            onChange={e => setActive(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: 'var(--input-bg)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: '12px',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              outline: 'none',
+              minWidth: '130px',
+              transition: 'border-color 0.2s',
+            }}
           >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-        }
-      />
+            <option value="">All</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+      </Card>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
-        <div className="card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-            <Mail className="w-5 h-5 text-emerald-600" />
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-4 flex items-center gap-4">
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '12px',
+            backgroundColor: 'var(--accent-dim)',
+            border: '1px solid var(--accent-border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <CheckCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           </div>
           <div>
-            <p className="text-xs text-ink-400 uppercase tracking-widest font-500">Active</p>
-            <p className="font-display text-xl font-semibold text-ink-900">{total.toLocaleString()}</p>
+            <p className="font-display text-2xl" style={{ color: 'var(--accent)' }}>{subs.filter(s => s.isActive).length}</p>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Active</p>
           </div>
-        </div>
-        <div className="card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-            <Mail className="w-5 h-5 text-red-400" />
-          </div>
-          <div>
-            <p className="text-xs text-ink-400 uppercase tracking-widest font-500">On this page</p>
-            <p className="font-display text-xl font-semibold text-ink-900">{activeCount}</p>
-          </div>
-        </div>
-        <div className="card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gold-50 flex items-center justify-center">
-            <Mail className="w-5 h-5 text-gold-600" />
+        </Card>
+        <Card className="p-4 flex items-center gap-4">
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '12px',
+            backgroundColor: 'rgba(248,113,113,0.08)',
+            border: '1px solid rgba(248,113,113,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <XCircle className="w-5 h-5" style={{ color: '#f87171' }} />
           </div>
           <div>
-            <p className="text-xs text-ink-400 uppercase tracking-widest font-500">Total Pages</p>
-            <p className="font-display text-xl font-semibold text-ink-900">{totalPages}</p>
+            <p className="font-display text-2xl" style={{ color: '#f87171' }}>{subs.filter(s => !s.isActive).length}</p>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Unsubscribed</p>
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div className="card p-4 mb-5 flex flex-wrap gap-3 items-center">
-        <FilterSelect value={active} onChange={setActive} options={ACTIVE_OPTS} placeholder="All subscribers" />
-        <div className="ml-auto text-ink-400 text-xs">{total} results</div>
-      </div>
-
-      <div className="card overflow-hidden">
-        {loading ? <Spinner /> : data.length === 0 ? <EmptyState /> : (
-          <div className="overflow-x-auto">
-            <table className="admin-table">
+      {/* Table */}
+      <Card>
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={<Mail className="w-7 h-7" />} title="No Subscribers" description="No subscribers found." />
+        ) : (
+          <>
+            <Table>
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Date Subscribed</th>
+                  <Th>Email</Th>
+                  <Th>Status</Th>
+                  <Th>Subscribed</Th>
                 </tr>
               </thead>
               <tbody>
-                {data.map(s => (
-                  <tr key={s._id}>
-                    <td>
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center ${s.isActive ? 'bg-emerald-100' : 'bg-gray-100'}`}>
-                          <Mail className={`w-3.5 h-3.5 ${s.isActive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                {filtered.map(s => (
+                  <Tr key={s._id}>
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <div style={{
+                          width: '28px', height: '28px', borderRadius: '50%',
+                          backgroundColor: 'var(--accent-dim)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          <Mail className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
                         </div>
-                        <span className="text-sm text-ink-700 font-500">{s.email}</span>
+                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{s.email}</span>
                       </div>
-                    </td>
-                    <td><StatusBadge value={String(s.isActive)} label={s.isActive ? 'Active' : 'Unsubscribed'} /></td>
-                    <td className="text-ink-400 text-xs">{fmtDate(s.createdAt)}</td>
-                  </tr>
+                    </Td>
+                    <Td>
+                      {s.isActive
+                        ? <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--accent)' }}><CheckCircle className="w-3.5 h-3.5" />Active</span>
+                        : <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}><XCircle className="w-3.5 h-3.5" />Inactive</span>
+                      }
+                    </Td>
+                    <Td><span className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(s.createdAt)}</span></Td>
+                  </Tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </Table>
+            <div className="px-4 pb-4">
+              <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPage={setPage} />
+            </div>
+          </>
         )}
-        {!loading && data.length > 0 && (
-          <div className="px-4 pb-4">
-            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
-          </div>
-        )}
-      </div>
+      </Card>
     </div>
   );
 }

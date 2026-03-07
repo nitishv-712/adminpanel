@@ -2,87 +2,242 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
+import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui';
 import {
   LayoutDashboard, Users, Home, MessageSquare,
-  Mail, LogOut, Building2, ChevronRight, Menu, X,
+  Mail, LogOut, Building2, ChevronRight, ShieldCheck,
+  Headphones, Star, Sun, Moon,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { use, useState } from 'react';
-const nav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/properties', label: 'Properties', icon: Home },
-  { href: '/users', label: 'Users', icon: Users },
-  { href: '/inquiries', label: 'Inquiries', icon: MessageSquare },
-  { href: '/newsletter', label: 'Newsletter', icon: Mail },
+
+const navItems = [
+  { href: '/dashboard',        label: 'Dashboard',       icon: LayoutDashboard, desc: 'Overview & analytics' },
+  { href: '/properties',       label: 'Properties',      icon: Home,            desc: 'Listings management' },
+  { href: '/users',            label: 'Web Users',       icon: Users,           desc: 'Registered users' },
+  { href: '/inquiries',        label: 'Inquiries',       icon: MessageSquare,   desc: 'Buyer–seller threads' },
+  { href: '/support-tickets',  label: 'Support Tickets', icon: Headphones,      desc: 'Customer support' },
+  { href: '/reviews',          label: 'Reviews',         icon: Star,            desc: 'Property reviews' },
+  { href: '/newsletter',       label: 'Newsletter',      icon: Mail,            desc: 'Subscribers' },
+  { href: '/admin-accounts',   label: 'Admin Accounts',  icon: ShieldCheck,     desc: 'Panel admins', superOnly: true },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  const { user, logout, isSuperAdmin } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
 
   return (
-    <>  
-      
-      <aside className="w-64 shrink-0 h-screen sticky top-0 bg-ink-950 flex flex-col border-r border-ink-800">
-
-        {/* Logo */}
-        <div className="px-6 py-7 border-b border-ink-800">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold-500 flex items-center justify-center shrink-0">
-              <Building2 className="w-5 h-5 text-ink-950" />
-            </div>
-            <div>
-              <p className="font-display text-white font-semibold text-sm leading-tight">99HomeBazaar</p>
-              <p className="text-ink-500 text-xs">Admin Panel</p>
-            </div>
+    <aside style={{
+      width: '256px',
+      flexShrink: 0,
+      height: '100vh',
+      position: 'sticky',
+      top: 0,
+      backgroundColor: 'var(--bg-sidebar)',
+      borderRight: '1px solid var(--border)',
+      display: 'flex',
+      flexDirection: 'column',
+      transition: 'background-color 0.3s ease, border-color 0.3s ease',
+    }}>
+      {/* Logo */}
+      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '12px',
+            backgroundColor: 'var(--accent-dim)',
+            border: '1px solid var(--accent-border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Building2 style={{ width: '18px', height: '18px', color: 'var(--accent)' }} />
+          </div>
+          <div>
+            <p className="font-display" style={{ fontSize: '17px', color: 'var(--text-primary)', letterSpacing: '0.12em', lineHeight: 1.2 }}>
+              99HOMEBAZAAR
+            </p>
+            <p style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600 }}>
+              Admin Panel
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-5 space-y-0.5 overflow-y-auto">
-          <p className="text-ink-600 text-xs uppercase tracking-widest font-500 px-3 pb-2">Menu</p>
-          {nav.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
+      {/* Navigation */}
+      <nav style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}>
+        <p style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, padding: '0 12px 12px' }}>
+          Navigation
+        </p>
+
+        {navItems
+          .filter(item => !item.superOnly || isSuperAdmin)
+          .map(({ href, label, icon: Icon }) => {
+            const isActive = pathname === href || pathname.startsWith(href + '/');
             return (
               <Link
                 key={href}
                 href={href}
-                className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 group',
-                  active
-                    ? 'bg-gold-500/15 text-gold-400 font-500'
-                    : 'text-ink-400 hover:bg-ink-800 hover:text-ink-100'
-                )}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  marginBottom: '2px',
+                  textDecoration: 'none',
+                  position: 'relative',
+                  transition: 'all 0.2s ease',
+                  backgroundColor: isActive ? 'var(--accent-dim)' : 'transparent',
+                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                  ...(isActive ? { boxShadow: 'inset 3px 0 0 var(--accent)' } : {}),
+                }}
+                className={cn(!isActive && 'nav-link-hover')}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-dim)';
+                    (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                    (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+                  }
+                }}
               >
-                <Icon className={clsx('w-4.5 h-4.5', active ? 'text-gold-400' : 'text-ink-500 group-hover:text-ink-300')} style={{ width: 18, height: 18 }} />
-                <span className="flex-1">{label}</span>
-                {active && <ChevronRight className="w-3.5 h-3.5 text-gold-500" />}
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                    width: '3px', height: '18px',
+                    backgroundColor: 'var(--accent)', borderRadius: '0 3px 3px 0',
+                  }} />
+                )}
+                <Icon style={{ width: '16px', height: '16px', flexShrink: 0, color: isActive ? 'var(--accent)' : 'var(--text-muted)' }} />
+                <span style={{ flex: 1 }}>{label}</span>
+                {isActive && <ChevronRight style={{ width: '12px', height: '12px', opacity: 0.5, color: 'var(--accent)' }} />}
               </Link>
             );
           })}
-        </nav>
+      </nav>
 
-        {/* User / Logout */}
-        <div className="px-3 py-4 border-t border-ink-800">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-ink-900">
-            <div className="w-8 h-8 rounded-full bg-gold-700 flex items-center justify-center text-gold-200 text-xs font-600 shrink-0">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-500 truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-ink-500 text-xs truncate">{user?.email}</p>
-            </div>
-            <button
-              onClick={logout}
-              title="Logout"
-              className="text-ink-500 hover:text-red-400 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+      {/* Theme Toggle */}
+      <div style={{ padding: '0 12px 8px' }}>
+        <button
+          onClick={toggleTheme}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '9px 12px',
+            borderRadius: '10px',
+            border: '1px solid var(--border)',
+            backgroundColor: 'var(--bg-mid)',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 500,
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent-border)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--accent)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+          }}
+        >
+          {isDark
+            ? <Sun style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+            : <Moon style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+          }
+          <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+          <div style={{
+            marginLeft: 'auto',
+            width: '32px', height: '18px',
+            borderRadius: '9px',
+            backgroundColor: isDark ? 'var(--bg-mid)' : 'var(--accent)',
+            border: '1px solid var(--accent-border)',
+            position: 'relative',
+            transition: 'background-color 0.3s ease',
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '2px',
+              left: isDark ? '2px' : '14px',
+              width: '12px', height: '12px',
+              borderRadius: '50%',
+              backgroundColor: isDark ? 'var(--text-muted)' : 'white',
+              transition: 'left 0.3s ease, background-color 0.3s ease',
+            }} />
+          </div>
+        </button>
+      </div>
+
+      {/* Role indicator */}
+      {isSuperAdmin && (
+        <div style={{ padding: '0 12px 8px' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 12px',
+            backgroundColor: 'var(--accent-dim)',
+            border: '1px solid var(--accent-border)',
+            borderRadius: '10px',
+          }}>
+            <ShieldCheck style={{ width: '13px', height: '13px', color: 'var(--accent)' }} />
+            <span style={{ fontSize: '10px', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700 }}>
+              Super Admin
+            </span>
           </div>
         </div>
-      </aside>
-    </>
+      )}
+
+      {/* User Profile */}
+      <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '10px 12px',
+          borderRadius: '10px',
+          backgroundColor: 'var(--bg-mid)',
+          border: '1px solid var(--border)',
+        }}>
+          <Avatar firstName={user?.firstName} lastName={user?.lastName} avatar={user?.avatar} size="sm" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.email}
+            </p>
+          </div>
+          <button
+            onClick={logout}
+            title="Logout"
+            style={{
+              color: 'var(--text-muted)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.color = '#ef4444';
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(239,68,68,0.08)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+            }}
+          >
+            <LogOut style={{ width: '14px', height: '14px' }} />
+          </button>
+        </div>
+      </div>
+    </aside>
   );
 }

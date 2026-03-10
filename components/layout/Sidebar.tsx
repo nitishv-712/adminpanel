@@ -10,22 +10,43 @@ import {
   Mail, LogOut, Building2, ChevronRight, ShieldCheck,
   Headphones, Star, Sun, Moon,
 } from 'lucide-react';
+import { Resource, Action } from '@/types';
 
-const navItems = [
-  { href: '/dashboard',        label: 'Dashboard',       icon: LayoutDashboard, desc: 'Overview & analytics' },
-  { href: '/properties',       label: 'Properties',      icon: Home,            desc: 'Listings management' },
-  { href: '/users',            label: 'Web Users',       icon: Users,           desc: 'Registered users' },
-  { href: '/inquiries',        label: 'Inquiries',       icon: MessageSquare,   desc: 'Buyer–seller threads' },
-  { href: '/support-tickets',  label: 'Support Tickets', icon: Headphones,      desc: 'Customer support' },
-  { href: '/reviews',          label: 'Reviews',         icon: Star,            desc: 'Property reviews' },
-  { href: '/newsletter',       label: 'Newsletter',      icon: Mail,            desc: 'Subscribers' },
-  { href: '/admin-accounts',   label: 'Admin Accounts',  icon: ShieldCheck,     desc: 'Panel admins', superOnly: true },
+// ─── Nav config ───────────────────────────────────────────────────────────────
+// Each item declares what permission is required to see it.
+// Items without resource/action are visible to all logged-in admins (e.g. Dashboard).
+
+interface NavItem {
+  href:      string;
+  label:     string;
+  icon:      React.ElementType;
+  resource?: Resource;
+  action?:   Action;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/properties',      label: 'Properties',      icon: Home,           resource: 'properties',    action: 'read' },
+  { href: '/users',           label: 'Web Users',       icon: Users,          resource: 'users',         action: 'read' },
+  { href: '/inquiries',       label: 'Inquiries',       icon: MessageSquare,  resource: 'inquiries',     action: 'read' },
+  { href: '/support-tickets', label: 'Support Tickets', icon: Headphones,     resource: 'supportTickets',action: 'read' },
+  { href: '/reviews',         label: 'Reviews',         icon: Star,           resource: 'reviews',       action: 'read' },
+  { href: '/newsletter',      label: 'Newsletter',      icon: Mail,           resource: 'newsletter',    action: 'read' },
+  { href: '/admin-accounts',  label: 'Admin Accounts',  icon: ShieldCheck,    resource: 'adminUsers',    action: 'read' },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, logout, isSuperAdmin } = useAuth();
+  const { user, logout, can, isSuperAdmin } = useAuth();
   const { toggleTheme, isDark } = useTheme();
+
+  // Filter: show item if no permission required, or admin has the required permission
+  const visibleItems = NAV_ITEMS.filter(item => {
+    if (!item.resource || !item.action) return true;
+    return can(item.resource, item.action);
+  });
 
   return (
     <aside style={{
@@ -68,57 +89,55 @@ export default function Sidebar() {
           Navigation
         </p>
 
-        {navItems
-          .filter(item => !item.superOnly || isSuperAdmin)
-          .map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href || pathname.startsWith(href + '/');
-            return (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '9px 12px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  marginBottom: '2px',
-                  textDecoration: 'none',
-                  position: 'relative',
-                  transition: 'all 0.2s ease',
-                  backgroundColor: isActive ? 'var(--accent-dim)' : 'transparent',
-                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                  ...(isActive ? { boxShadow: 'inset 3px 0 0 var(--accent)' } : {}),
-                }}
-                className={cn(!isActive && 'nav-link-hover')}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-dim)';
-                    (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                    (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
-                  }
-                }}
-              >
-                {isActive && (
-                  <div style={{
-                    position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
-                    width: '3px', height: '18px',
-                    backgroundColor: 'var(--accent)', borderRadius: '0 3px 3px 0',
-                  }} />
-                )}
-                <Icon style={{ width: '16px', height: '16px', flexShrink: 0, color: isActive ? 'var(--accent)' : 'var(--text-muted)' }} />
-                <span style={{ flex: 1 }}>{label}</span>
-                {isActive && <ChevronRight style={{ width: '12px', height: '12px', opacity: 0.5, color: 'var(--accent)' }} />}
-              </Link>
-            );
-          })}
+        {visibleItems.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href || pathname.startsWith(href + '/');
+          return (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '9px 12px',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: 500,
+                marginBottom: '2px',
+                textDecoration: 'none',
+                position: 'relative',
+                transition: 'all 0.2s ease',
+                backgroundColor: isActive ? 'var(--accent-dim)' : 'transparent',
+                color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                ...(isActive ? { boxShadow: 'inset 3px 0 0 var(--accent)' } : {}),
+              }}
+              className={cn(!isActive && 'nav-link-hover')}
+              onMouseEnter={e => {
+                if (!isActive) {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-dim)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isActive) {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+                }
+              }}
+            >
+              {isActive && (
+                <div style={{
+                  position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                  width: '3px', height: '18px',
+                  backgroundColor: 'var(--accent)', borderRadius: '0 3px 3px 0',
+                }} />
+              )}
+              <Icon style={{ width: '16px', height: '16px', flexShrink: 0, color: isActive ? 'var(--accent)' : 'var(--text-muted)' }} />
+              <span style={{ flex: 1 }}>{label}</span>
+              {isActive && <ChevronRight style={{ width: '12px', height: '12px', opacity: 0.5, color: 'var(--accent)' }} />}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Theme Toggle */}
@@ -150,7 +169,7 @@ export default function Sidebar() {
           }}
         >
           {isDark
-            ? <Sun style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+            ? <Sun  style={{ width: '15px', height: '15px', flexShrink: 0 }} />
             : <Moon style={{ width: '15px', height: '15px', flexShrink: 0 }} />
           }
           <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
@@ -176,23 +195,28 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Role indicator */}
-      {isSuperAdmin && (
-        <div style={{ padding: '0 12px 8px' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '8px 12px',
-            backgroundColor: 'var(--accent-dim)',
-            border: '1px solid var(--accent-border)',
-            borderRadius: '10px',
-          }}>
-            <ShieldCheck style={{ width: '13px', height: '13px', color: 'var(--accent)' }} />
+      {/* Role + Group badge */}
+      <div style={{ padding: '0 12px 8px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 12px',
+          backgroundColor: 'var(--accent-dim)',
+          border: '1px solid var(--accent-border)',
+          borderRadius: '10px',
+        }}>
+          <ShieldCheck style={{ width: '13px', height: '13px', color: 'var(--accent)', flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
             <span style={{ fontSize: '10px', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700 }}>
-              Super Admin
+              {user?.role?.label ?? user?.role?.name}
             </span>
+            {user?.group && (
+              <p style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.group.name}
+              </p>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* User Profile */}
       <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>

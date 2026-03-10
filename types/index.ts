@@ -12,7 +12,6 @@ export interface ApiResponse<T> {
   pagination?: Pagination;
 }
 
-// Paginated list response (maps to paginate() helper)
 export interface PaginatedResponse<T> {
   success: boolean;
   message: string;
@@ -20,32 +19,61 @@ export interface PaginatedResponse<T> {
   pagination: Pagination;
 }
 
-// ─── AdminUser  (adminUser.model.js) ─────────────────────────────────────────
+// ─── RBAC ─────────────────────────────────────────────────────────────────────
 
-export type AdminRole = "admin" | "superadmin";
+export type Resource =
+  | 'users' | 'adminUsers' | 'properties' | 'reviews'
+  | 'inquiries' | 'messages' | 'supportTickets' | 'ticketMessages'
+  | 'newsletter' | 'comparisons' | 'savedSearches' | 'searchHistory'
+  | 'otp' | 'auditLogs';
+
+export type Action =
+  | 'read' | 'create' | 'update' | 'delete'
+  | 'verify' | 'ban'
+  | 'approve' | 'feature' | 'archive'
+  | 'reject' | 'close' | 'assign' | 'resolve'
+  | 'export' | 'purge';
+
+export type PermissionMap = {
+  [R in Resource]?: Partial<Record<Action, boolean>>;
+};
+
+export type AdminRoleName = 'superadmin' | 'admin' | 'moderator' | 'support';
+
+export interface AdminRoleRef {
+  _id: string;
+  name: AdminRoleName;
+  label: string;
+}
+
+export interface AdminGroupRef {
+  _id: string;
+  name: string;
+}
+
+// ─── AdminUser ────────────────────────────────────────────────────────────────
 
 export interface ApiAdminUser {
   _id: string;
   firstName: string;
   lastName: string;
-  /** Virtual */
   fullName: string;
   email: string;
   phone: string | null;
-  role: AdminRole;
+  role: AdminRoleRef;
+  group: AdminGroupRef | null;
   avatar: string | null;
   isActive: boolean;
-  /** ObjectId ref to AdminUser who created this account */
+  permissions: PermissionMap;
   createdBy: string | null;
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
-  // password, refreshToken are select: false — never returned
 }
 
-// ─── User  (user.model.js) ────────────────────────────────────────────────────
+// ─── User ─────────────────────────────────────────────────────────────────────
 
-export type UserRole = "buyer" | "seller" | "agent";
+export type UserRole = 'buyer' | 'seller' | 'agent';
 
 export interface PanCard {
   panCardNumber: string | null;
@@ -63,7 +91,6 @@ export interface ApiUser {
   _id: string;
   firstName: string;
   lastName: string;
-  /** Virtual */
   fullName: string;
   email: string;
   isGmailVerified: boolean;
@@ -76,23 +103,20 @@ export interface ApiUser {
   aadharCard: AadharCard;
   createdAt: string;
   updatedAt: string;
-  // password, refreshToken, passwordResetToken, passwordResetExpires are select: false
 }
 
-// ─── Property  (property.model.js) ───────────────────────────────────────────
+// ─── Property ─────────────────────────────────────────────────────────────────
 
 export interface PropertyAddress {
   street?: string;
   city: string;
   state?: string;
   zip?: string;
-  /** default: "IN" */
   country: string;
 }
 
 export interface PropertyLocation {
-  type: "Point";
-  /** [longitude, latitude] */
+  type: 'Point';
   coordinates: [number, number];
 }
 
@@ -103,10 +127,10 @@ export interface PropertyImage {
   isPrimary: boolean;
 }
 
-export type ListingType    = "sale" | "rent";
-export type PropertyType   = "House" | "Apartment" | "Villa" | "Penthouse" | "Townhouse" | "Land" | "Office";
-export type PropertyStatus = "pending" | "active" | "sold" | "rented" | "archived";
-export type PropertyBadge  = "Premium" | "New" | "Featured" | null;
+export type ListingType    = 'sale' | 'rent';
+export type PropertyType   = 'House' | 'Apartment' | 'Villa' | 'Penthouse' | 'Townhouse' | 'Land' | 'Office';
+export type PropertyStatus = 'pending' | 'active' | 'sold' | 'rented' | 'archived';
+export type PropertyBadge  = 'Premium' | 'New' | 'Featured' | null;
 
 export interface ApiProperty {
   _id: string;
@@ -129,24 +153,22 @@ export interface ApiProperty {
   saves: number;
   inquiries: number;
   isFeatured: boolean;
-  /** Virtual — e.g. "₹45,00,000" or "₹25,000/mo" */
   priceLabel: string;
-  /** Virtual — "For Sale" | "For Rent" */
   tag: string;
-  /** Virtual — "City, State" */
   locationString: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// ─── Inquiry  (inquiry.model.js) ─────────────────────────────────────────────
-export type InquiryStatus = "active" | "closed";
+// ─── Inquiry ──────────────────────────────────────────────────────────────────
+
+export type InquiryStatus = 'active' | 'closed';
 
 export interface ApiMessage {
   _id: string;
   inquiry: string;
   sender: string;
-  role: "user" | "owner" | "admin";
+  role: 'user' | 'owner' | 'admin';
   text: string;
   visibleToUser: boolean;
   visibleToOwner: boolean;
@@ -157,9 +179,9 @@ export interface ApiMessage {
 
 export interface ApiInquiry {
   _id: string;
-  property: string | ApiProperty; // Can be ID or populated
-  user: string | ApiUser; // Can be ID or populated
-  owner: string | ApiUser; // Can be ID or populated
+  property: string | ApiProperty;
+  user: string | ApiUser;
+  owner: string | ApiUser;
   status: InquiryStatus;
   lastMessageAt: string;
   createdAt: string;
@@ -173,92 +195,30 @@ export interface SingleInquiryData {
 
 // ─── Review ───────────────────────────────────────────────────────────────────
 
-export type ReviewStatus = "published" | "pending" | "rejected";
+export type ReviewStatus = 'published' | 'pending' | 'rejected';
 
 export interface ApiReview {
-  _id:       string;
-  user:      ApiUser | string;
-  property:  ApiProperty | string;
-  rating:    1 | 2 | 3 | 4 | 5;
-  title:     string;
-  comment:   string;
-  status:    ReviewStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ReviewStats {
-  averageRating:   number;
-  totalReviews:    number;
-  ratingBreakdown: { 5: number; 4: number; 3: number; 2: number; 1: number };
-}
-
-
-// ─── Comparison  (comparison.model.js) ───────────────────────────────────────
-
-export interface PricePerSqftEntry {
-  propertyId: string;
-  title:      string;
-  pricePerSqft: number; // stored as parsed float, not string
-}
-
-export interface ComparisonAnalysis {
-  totalProperties: number;
-  priceRange:   { min: number; max: number; average: number };
-  bedroomRange: { min: number; max: number };
-  bathroomRange:{ min: number; max: number };
-  sqftRange:    { min: number; max: number; average: number };
-  pricePerSqft: PricePerSqftEntry[]; // sorted asc by pricePerSqft
-}
-
-export interface ApiComparison {
-  _id:         string;
-  user:        string;           // renamed from userId
-  name:        string;
-  description: string | null;
-  propertyIds: ApiProperty[] | string[]; // populated or raw
-  tags:        string[];
-  notes:       string | null;
-  isPublic:    boolean;
-  createdAt:   string;
-  updatedAt:   string;
-}
-
-
-// ─── SavedSearch  (savedSearch.model.js) ─────────────────────────────────────
-// NOTE: despite the model name, this is actually a saved/bookmarked property
-
-export interface ApiSavedProperty {
   _id: string;
-  user: string;
+  user: ApiUser | string;
   property: ApiProperty | string;
-  /** Model uses savedAt instead of createdAt (no timestamps option set) */
-  savedAt: string;
-}
-
-// ─── SearchHistory  (searchHistory.model.js) ─────────────────────────────────
-
-export interface ApiSearchHistory {
-  _id:       string;
-  user:      string;
-  query:     string;
-  filters:   Record<string, unknown>;
+  rating: 1 | 2 | 3 | 4 | 5;
+  title: string;
+  comment: string;
+  status: ReviewStatus;
   createdAt: string;
   updatedAt: string;
 }
 
-// ─── Support Ticket  (supportTicket.model.js) ────────────────────────────────
+// ─── Support Ticket ───────────────────────────────────────────────────────────
 
-export type TicketCategory = "technical" | "billing" | "account" | "listing" | "other";
-export type TicketPriority = "low" | "medium" | "high";
-// NOTE: "waiting-user" is NOT in the model enum — removed from original types
-export type TicketStatus   = "open" | "in-progress" | "resolved" | "closed";
+export type TicketCategory = 'technical' | 'billing' | 'account' | 'listing' | 'other';
+export type TicketPriority = 'low' | 'medium' | 'high';
+export type TicketStatus   = 'open' | 'in-progress' | 'resolved' | 'closed';
 
 export interface ApiTicketMessage {
   _id: string;
   ticket: string;
   sender: ApiUser | string;
-  /** Field is "text" in model, NOT "message" */
   text: string;
   isAdmin: boolean;
   createdAt: string;
@@ -267,7 +227,6 @@ export interface ApiTicketMessage {
 
 export interface ApiSupportTicket {
   _id: string;
-  /** Field is "user" in model, NOT "userId" */
   user: ApiUser | string;
   subject: string;
   category: TicketCategory;
@@ -279,16 +238,14 @@ export interface ApiSupportTicket {
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  // NOTE: messages are NOT embedded — fetched separately via GET /:id (paginated)
 }
 
-// GET /:id response shape (matches paginate() helper output)
 export interface TicketDetailResponse {
   ticket: ApiSupportTicket;
   messages: ApiTicketMessage[];
 }
 
-// ─── Newsletter  (newsletter.model.js) ───────────────────────────────────────
+// ─── Newsletter ───────────────────────────────────────────────────────────────
 
 export interface ApiNewsletter {
   _id: string;
@@ -298,147 +255,37 @@ export interface ApiNewsletter {
   updatedAt: string;
 }
 
-// ─── OTP  (otp.model.js) ─────────────────────────────────────────────────────
+// ─── Role & Group ─────────────────────────────────────────────────────────────
 
-export interface ApiOtp {
+export interface ResourcePermission {
+  resource: Resource;
+  actions: Partial<Record<Action, boolean>>;
+}
+
+export interface ApiRole {
   _id: string;
-  email?: string;
-  phone?: string;
-  isVerified: boolean;
-  attempts: number;
-  expiresAt: string;
+  name: AdminRoleName;
+  label: string;
+  description: string | null;
+  isLocked: boolean;
+  permissions: ResourcePermission[];
   createdAt: string;
-  // otp field is never returned to client
 }
 
-// ─── Upload  (upload.js) ──────────────────────────────────────────────────────
-
-export type UploadFolder = "avatar" | "aadhar" | "pancards" | "properties";
-
-export interface UploadLinkResponse {
-  uploadUrl: string;
-  viewUrl: string;
-  filePath: string;
+export interface ApiGroup {
+  _id: string;
+  name: string;
+  description: string | null;
+  role: AdminRoleRef;
+  permissions: ResourcePermission[];
+  members: ApiAdminUser[];
+  memberCount: number;
+  isActive: boolean;
+  createdBy: ApiAdminUser | string;
+  createdAt: string;
 }
 
-// ─── Analytics ───────────────────────────────────────────────────────────────
-// ─── Analytics types ──────────────────────────────────────────────────────────
-
-export interface TrendPoint {
-  date:  string; // "YYYY-MM-DD"
-  count: number;
-}
-
-export interface TopProperty {
-  _id:            string;
-  title:          string;
-  price:          number;
-  views:          number;
-  saves?:         number;
-  inquiries:      number;
-  status:         PropertyStatus;
-  listingType:    ListingType;
-  daysListed:     number;
-  conversionRate?: number;
-}
-
-export interface InquiryStatusBreakdown {
-  active: number;
-  closed: number;
-}
-
-export interface OwnerAnalytics {
-  totalListings:          number;
-  activeListings:         number;
-  pendingListings:        number;
-  soldListings:           number;
-  rentedListings:         number;
-  archivedListings:       number;
-  totalViews:             number;
-  totalSaves:             number;
-  totalInquiries:         number;
-  averageViewsPerListing: number;
-  averageSavesPerListing: number;
-  conversionRate:         number;
-  listingsByType:         { sale: number; rent: number };
-  topByViews:             TopProperty[];
-  topByInquiries:         TopProperty[];
-  inquiryTrend:           TrendPoint[];
-  inquiryStatus:          InquiryStatusBreakdown;
-}
-
-export interface PropertyAnalytics {
-  property: {
-    _id:         string;
-    title:       string;
-    price:       number;
-    status:      PropertyStatus;
-    listingType: ListingType;
-    createdAt:   string;
-    daysListed:  number;
-  };
-  analytics: {
-    totalViews:     number;
-    totalSaves:     number;
-    totalInquiries: number;
-    conversionRate: number;
-    saveRate:       number;
-    inquiryStatus:  InquiryStatusBreakdown;
-    inquiryTrend:   TrendPoint[];
-    inquiries: {
-      _id:           string;
-      user:          ApiUser | string;
-      status:        "active" | "closed";
-      lastMessageAt: string;
-      createdAt:     string;
-    }[];
-  };
-}
-// Support ticket stats (GET /support/stats)
-export interface SupportTicketStats {
-  totalTickets: number;
-  openTickets: number;
-  inProgressTickets: number;
-  resolvedTickets: number;
-  closedTickets: number;
-  highPriorityTickets: number;
-  averageResolutionTimeHours: number;
-}
-
-// ─── Filter / Query helpers ───────────────────────────────────────────────────
-
-export interface PropertyFilters {
-  sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "popular";
-  page?: number;
-  limit?: number;
-  type?: ListingType;
-  propType?: PropertyType;
-  city?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  minBeds?: String;
-  minBaths?: number;
-  featured?: boolean;
-  search?: string;
-}
-
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
-// ─── Admin Panel specific (kept from original types) ─────────────────────────
-
-// Re-export shorter aliases used throughout the admin panel pages
-export type AdminUser  = ApiAdminUser;
-export type User       = ApiUser;
-export type Property   = ApiProperty;
-export type Inquiry    = ApiInquiry;
-export type Review     = ApiReview;
-export type SupportTicket = ApiSupportTicket;
-export type TicketMessage = ApiTicketMessage;
-export type Subscriber = ApiNewsletter;
-export type InquiryMessage = ApiMessage;
-export type SupportStats = SupportTicketStats;
+// ─── Stats ────────────────────────────────────────────────────────────────────
 
 export interface Stats {
   totals: {
@@ -454,3 +301,26 @@ export interface Stats {
   recentUsers: ApiUser[];
   recentProperties: ApiProperty[];
 }
+
+export interface SupportTicketStats {
+  totalTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  resolvedTickets: number;
+  closedTickets: number;
+  highPriorityTickets: number;
+  averageResolutionTimeHours: number;
+}
+
+// ─── Aliases ──────────────────────────────────────────────────────────────────
+
+export type AdminUser     = ApiAdminUser;
+export type User          = ApiUser;
+export type Property      = ApiProperty;
+export type Inquiry       = ApiInquiry;
+export type Review        = ApiReview;
+export type SupportTicket = ApiSupportTicket;
+export type TicketMessage = ApiTicketMessage;
+export type Subscriber    = ApiNewsletter;
+export type InquiryMessage = ApiMessage;
+export type SupportStats  = SupportTicketStats;

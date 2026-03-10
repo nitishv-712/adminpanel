@@ -8,7 +8,6 @@ const api = axios.create({
 });
 
 let isCheckingAuth = false;
-
 export const setCheckingAuth = (val: boolean) => { isCheckingAuth = val; };
 
 api.interceptors.response.use(
@@ -16,14 +15,10 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
       const url: string = err.config?.url ?? '';
-      
-      // ✅ Broader check — cover all auth-related endpoints
-      const isAuthEndpoint = 
-        url.includes('/auth/me') || 
+      const isAuthEndpoint =
+        url.includes('/auth/me') ||
         url.includes('/auth/login') ||
         url.includes('/admin/auth');
-
-      // ✅ Don't redirect if we're still doing the initial session check
       if (!isAuthEndpoint && !isCheckingAuth) {
         window.location.href = '/login';
       }
@@ -34,7 +29,7 @@ api.interceptors.response.use(
 
 export default api;
 
-// ─── Admin Auth ───────────────────────────────────────────────
+// ─── Admin Auth ───────────────────────────────────────────────────────────────
 export const adminAuthApi = {
   login:          (email: string, password: string) =>
     api.post('/admin/auth/login', { email, password }),
@@ -43,38 +38,67 @@ export const adminAuthApi = {
   updateMe:       (data: Record<string, unknown>) => api.patch('/admin/auth/me', data),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.patch('/admin/auth/password', { currentPassword, newPassword }),
-  // Superadmin only
+  // adminUsers resource
   listAdmins:   (params?: Record<string, unknown>) => api.get('/admin/auth/admins', { params }),
-  createAdmin:  (data: Record<string, unknown>) => api.post('/admin/auth/create-admin', data),
+  getAdmin:     (id: string) => api.get(`/admin/auth/admins/${id}`),
+  createAdmin:  (data: Record<string, unknown>) => api.post('/admin/auth/admins', data),
   updateAdmin:  (id: string, data: Record<string, unknown>) => api.patch(`/admin/auth/admins/${id}`, data),
   deleteAdmin:  (id: string) => api.delete(`/admin/auth/admins/${id}`),
 };
 
-// ─── Stats ────────────────────────────────────────────────────
+// ─── Roles ────────────────────────────────────────────────────────────────────
+export const rolesApi = {
+  list:               () => api.get('/admin/roles'),
+  getOne:             (id: string) => api.get(`/admin/roles/${id}`),
+  getResourceActions: () => api.get('/admin/roles/resource-actions'),
+  updatePermissions:  (id: string, permissions: Record<string, unknown>) =>
+    api.patch(`/admin/roles/${id}/permissions`, { permissions }),
+  seed:               () => api.post('/admin/roles/seed'),
+};
+
+// ─── Groups ───────────────────────────────────────────────────────────────────
+export const groupsApi = {
+  list:         (params?: Record<string, unknown>) => api.get('/admin/groups', { params }),
+  getOne:       (id: string) => api.get(`/admin/groups/${id}`),
+  create:       (data: Record<string, unknown>) => api.post('/admin/groups', data),
+  update:       (id: string, data: Record<string, unknown>) => api.patch(`/admin/groups/${id}`, data),
+  delete:       (id: string) => api.delete(`/admin/groups/${id}`),
+  addMember:    (groupId: string, adminId: string) =>
+    api.post(`/admin/groups/${groupId}/members`, { adminId }),
+  removeMember: (groupId: string, adminId: string) =>
+    api.delete(`/admin/groups/${groupId}/members/${adminId}`),
+};
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
 export const statsApi = {
   get: () => api.get('/admin/stats'),
 };
 
-// ─── Web Users ────────────────────────────────────────────────
+// ─── Web Users ────────────────────────────────────────────────────────────────
 export const usersApi = {
   list:   (params?: Record<string, unknown>) => api.get('/admin/users', { params }),
+  getOne: (id: string) => api.get(`/admin/users/${id}`),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/admin/users/${id}`, data),
+  verify: (id: string) => api.patch(`/admin/users/${id}/verify`),
+  ban:    (id: string, ban: boolean, reason?: string) =>
+    api.patch(`/admin/users/${id}/ban`, { ban, reason }),
   delete: (id: string) => api.delete(`/admin/users/${id}`),
 };
 
-// ─── Properties ───────────────────────────────────────────────
+// ─── Properties ───────────────────────────────────────────────────────────────
 export const propertiesApi = {
   list:   (params?: Record<string, unknown>) => api.get('/admin/properties', { params }),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/admin/properties/${id}`, data),
   delete: (id: string) => api.delete(`/admin/properties/${id}`),
 };
 
-// ─── Inquiries ────────────────────────────────────────────────
+// ─── Inquiries ────────────────────────────────────────────────────────────────
 export const inquiriesApi = {
   list:          (params?: Record<string, unknown>) => api.get('/admin/inquiries', { params }),
   getOne:        (id: string) => api.get(`/admin/inquiries/${id}`),
   updateStatus:  (id: string, status: string) =>
     api.patch(`/admin/inquiries/${id}/status`, { status }),
+  delete:        (id: string) => api.delete(`/admin/inquiries/${id}`),
   sendMessage:   (id: string, text: string) =>
     api.post(`/admin/inquiries/${id}/message`, { text }),
   hideMessage:   (msgId: string, data: { visibleToUser?: boolean; visibleToOwner?: boolean }) =>
@@ -85,12 +109,14 @@ export const inquiriesApi = {
     api.delete(`/admin/inquiries/message/${msgId}`),
 };
 
-// ─── Newsletter ───────────────────────────────────────────────
+// ─── Newsletter ───────────────────────────────────────────────────────────────
 export const newsletterApi = {
-  list: (params?: Record<string, unknown>) => api.get('/admin/newsletter', { params }),
+  list:   (params?: Record<string, unknown>) => api.get('/admin/newsletter', { params }),
+  delete: (id: string) => api.delete(`/admin/newsletter/${id}`),
+  export: () => api.get('/admin/newsletter/export'),
 };
 
-// ─── Support Tickets ──────────────────────────────────────────
+// ─── Support Tickets ──────────────────────────────────────────────────────────
 export const supportApi = {
   list:           (params?: Record<string, unknown>) => api.get('/admin/support', { params }),
   stats:          () => api.get('/admin/support/stats'),
@@ -108,7 +134,7 @@ export const supportApi = {
   delete:         (id: string) => api.delete(`/admin/support/${id}`),
 };
 
-// ─── Reviews ──────────────────────────────────────────────────
+// ─── Reviews ──────────────────────────────────────────────────────────────────
 export const reviewsApi = {
   list:         (params?: Record<string, unknown>) => api.get('/admin/reviews', { params }),
   updateStatus: (id: string, status: string) =>

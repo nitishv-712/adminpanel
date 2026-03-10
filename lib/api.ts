@@ -48,12 +48,29 @@ export const adminAuthApi = {
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
 export const rolesApi = {
+  // ─── ROLES ───────────────────────────────────────────────────────────────
   list:               () => api.get('/admin/roles'),
   getOne:             (id: string) => api.get(`/admin/roles/${id}`),
   getResourceActions: () => api.get('/admin/roles/resource-actions'),
-  updatePermissions:  (id: string, permissions: Record<string, unknown>) =>
+  create:             (body: { name: string; label: string; description?: string; permissions?: Record<string, Record<string, boolean>> }) =>
+    api.post('/admin/roles', body),
+  updatePermissions:  (id: string, permissions: Record<string, Record<string, boolean>>) =>
     api.patch(`/admin/roles/${id}/permissions`, { permissions }),
-  seed:               () => api.post('/admin/roles/seed'),
+
+  // ─── GROUPS ──────────────────────────────────────────────────────────────
+  listGroups:   (params?: { role?: string; isActive?: boolean }) =>
+    api.get('/admin/groups', { params }),
+  getGroup:     (id: string) => api.get(`/admin/groups/${id}`),
+  createGroup:  (body: { name: string; role: string; description?: string; permissions?: Record<string, Record<string, boolean>> }) =>
+    api.post('/admin/groups', body),
+  updateGroup:  (id: string, body: { name?: string; description?: string; permissions?: Record<string, Record<string, boolean>> }) =>
+    api.patch(`/admin/groups/${id}`, body),
+  deleteGroup:  (id: string) => api.delete(`/admin/groups/${id}`),
+
+  addMember:    (groupId: string, adminId: string) =>
+    api.post(`/admin/groups/${groupId}/members`, { adminId }),
+  removeMember: (groupId: string, adminId: string) =>
+    api.delete(`/admin/groups/${groupId}/members/${adminId}`),
 };
 
 // ─── Groups ───────────────────────────────────────────────────────────────────

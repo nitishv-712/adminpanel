@@ -58,7 +58,7 @@ export default function ReviewsPage() {
     setLoading(true);
     reviewsApi.list(params)
       .then(res => {
-        const d: PaginatedResponse<Review> = res.data.data;
+        const d: PaginatedResponse<Review> = res.data;
         setReviews(d.data); setTotal(d.pagination.total);
         set(cacheKey, { data: d.data, total: d.pagination.total });
       })

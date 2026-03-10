@@ -48,7 +48,7 @@ export default function PropertiesPage() {
     setError('');
     propertiesApi.list(params)
       .then(res => {
-        const d = res.data?.data;
+        const d = res.data;
         const result = { data: d?.data ?? [], total: d?.total ?? 0 };
         set(cacheKey, result);
         setProperties(result.data);

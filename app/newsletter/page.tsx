@@ -31,7 +31,7 @@ export default function NewsletterPage() {
     setLoading(true);
     newsletterApi.list(params)
       .then(res => {
-        const d: PaginatedResponse<Subscriber> = res.data.data;
+        const d: PaginatedResponse<Subscriber> = res.data;
         set(cacheKey, { data: d.data, total: d.pagination.pages });
         setSubs(d.data); setTotal(d.pagination.pages);
       })

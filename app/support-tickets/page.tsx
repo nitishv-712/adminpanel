@@ -59,7 +59,7 @@ export default function SupportTicketsPage() {
     setLoading(true);
     supportApi.list(params)
       .then(res => {
-        const d: PaginatedResponse<SupportTicket> = res.data.data;
+        const d: PaginatedResponse<SupportTicket> = res.data;
         setTickets(d.data); setTotal(d.pagination.pages);
         set(cacheKey, { data: d.data, total: d.pagination.pages });
       })

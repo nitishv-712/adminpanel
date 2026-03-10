@@ -25,11 +25,6 @@ export default function AdminAccountsPage() {
   const [search, setSearch]   = useState('');
   const [roleFilter, setRole] = useState('');
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'admin' });
-  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
-  const [creating, setCreating] = useState(false);
-
   const [editTarget, setEditTarget]   = useState<AdminUser | null>(null);
   const [editRole, setEditRole]       = useState('');
   const [editActive, setEditActive]   = useState(true);
@@ -55,32 +50,14 @@ export default function AdminAccountsPage() {
     setLoading(true);
     adminAuthApi.listAdmins(params)
       .then(res => {
-        const d = res.data;
-        setAdmins(d.data); setTotal(d.pagination?.total ?? 0);
+        const d = res.data.data;
+        setAdmins(d.admins); setTotal(d.pagination?.total ?? 0);
       })
       .finally(() => setLoading(false));
   }, [page, get, set, search, roleFilter, isSuperAdmin]);
 
   useEffect(() => { fetch(); }, [fetch]);
   useEffect(() => { setPage(1); }, [search, roleFilter]);
-
-  const handleCreate = async () => {
-    const errs: Record<string, string> = {};
-    if (!createForm.firstName) errs.firstName = 'Required';
-    if (!createForm.lastName)  errs.lastName  = 'Required';
-    if (!createForm.email)     errs.email     = 'Required';
-    if (createForm.password.length < 8) errs.password = 'Min 8 characters';
-    if (Object.keys(errs).length) { setCreateErrors(errs); return; }
-    setCreating(true);
-    try {
-      await adminAuthApi.createAdmin(createForm);
-      setShowCreate(false);
-      setCreateForm({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'admin' });
-      fetch();
-    } catch (e: any) {
-      setCreateErrors({ email: e.response?.data?.message ?? 'Failed to create' });
-    } finally { setCreating(false); }
-  };
 
   const handleEdit = async () => {
     if (!editTarget) return;
@@ -114,7 +91,7 @@ export default function AdminAccountsPage() {
             <ShieldCheck className="w-3.5 h-3.5" /> Superadmin access only
           </p>
         </div>
-        <Button variant="primary" onClick={() => setShowCreate(true)}>
+        <Button variant="primary" onClick={() => router.push('/admin-accounts/rolesgroups')}>
           <Plus className="w-4 h-4" /> Add Admin
         </Button>
       </div>
@@ -213,7 +190,12 @@ export default function AdminAccountsPage() {
                           </div>
                         </div>
                       </Td>
-                      <Td><StatusBadge value={a.role} /></Td>
+                      <Td>
+                        <span className="text-xs px-2 py-1 rounded-lg font-medium uppercase tracking-widest"
+                          style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }}>
+                          {typeof a.role === 'object' ? a.role.label : a.role}
+                        </span>
+                      </Td>
                       <Td>
                         {a.isActive
                           ? <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--accent)' }}><CheckCircle className="w-3.5 h-3.5" />Active</span>
@@ -229,7 +211,7 @@ export default function AdminAccountsPage() {
                       <Td><span className="text-xs" style={{ color: 'var(--text-muted)' }}>{a.lastLoginAt ? formatRelativeTime(a.lastLoginAt) : 'Never'}</span></Td>
                       <Td>
                         <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => { setEditTarget(a); setEditRole(a.role); setEditActive(a.isActive); }}>
+                          <Button variant="ghost" size="sm" onClick={() => { setEditTarget(a); setEditRole(typeof a.role === 'object' ? a.role.name : a.role); setEditActive(a.isActive); }}>
                             <Edit2 className="w-3.5 h-3.5" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(a)}>
@@ -248,34 +230,6 @@ export default function AdminAccountsPage() {
           </>
         )}
       </Card>
-
-      {/* Create Modal */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Admin Account">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="First Name" value={createForm.firstName} error={createErrors.firstName}
-              onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))} />
-            <Input label="Last Name" value={createForm.lastName} error={createErrors.lastName}
-              onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))} />
-          </div>
-          <Input label="Email" type="email" value={createForm.email} error={createErrors.email}
-            onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} />
-          <Input label="Password (min 8 chars)" type="password" value={createForm.password} error={createErrors.password}
-            onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} />
-          <Input label="Phone (optional)" value={createForm.phone}
-            onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} />
-          <Select label="Role" value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))}>
-            <option value="admin">Admin</option>
-            <option value="superadmin">Super Admin</option>
-          </Select>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button variant="primary" className="flex-1" onClick={handleCreate} disabled={creating}>
-              {creating ? 'Creating...' : 'Create Admin'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Edit Modal */}
       <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title="Update Admin" size="sm">

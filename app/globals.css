@@ -200,4 +200,23 @@ input:focus, textarea:focus, select:focus {
 
   /* ── Overlay ── */
   .overlay-c { background-color: var(--overlay); }
+
+  /* ── Spinner ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  border-color: var(--accent-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+/* For spinners on accent-colored backgrounds (e.g. submit buttons) */
+.spinner-on-accent {
+  border-color: rgba(255,255,255,0.25);
+  border-top-color: var(--text-on-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 }

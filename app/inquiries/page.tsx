@@ -52,7 +52,7 @@ export default function InquiriesPage() {
     setLoading(true);
     inquiriesApi.list(params)
       .then(res => {
-        const d: PaginatedResponse<Inquiry> = res.data.data;
+        const d: PaginatedResponse<Inquiry> = res.data;
         setInquiries(d.data); setTotal(d.pagination.pages);
         set(cacheKey, { data: d.data, total: d.pagination.pages });
       })

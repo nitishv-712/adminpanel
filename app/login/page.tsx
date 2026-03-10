@@ -13,7 +13,6 @@ export default function LoginPage() {
   const { login, user } = useAuth();
   const router = useRouter();
 
-  // Once user is hydrated after login, navigate to dashboard
   useEffect(() => {
     if (user) router.replace('/dashboard');
   }, [user]);
@@ -24,7 +23,6 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      // Navigation is handled by the useEffect above once user state is set
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid credentials');
     } finally {
@@ -33,82 +31,113 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#061210] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Background grid */}
       <div className="absolute inset-0" style={{
-        backgroundImage: `linear-gradient(rgba(0,229,200,0.03) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(0,229,200,0.03) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(var(--accent-dim) 1px, transparent 1px),
+                          linear-gradient(90deg, var(--accent-dim) 1px, transparent 1px)`,
         backgroundSize: '60px 60px',
       }} />
 
       {/* Glow orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[rgba(0,229,200,0.04)] rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[rgba(0,229,200,0.03)] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: 'var(--accent-dim)' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: 'var(--accent-dim)' }} />
 
       <div className="relative w-full max-w-sm mx-4 animate-fade-up">
-        {/* Top accent line */}
-        <div className="h-px bg-gradient-to-r from-transparent via-[#00E5C8] to-transparent mb-8 opacity-50" />
+        <div className="h-px mb-8 opacity-50" style={{ background: 'linear-gradient(to right, transparent, var(--accent), transparent)' }} />
 
-        <div className=" border border-[rgba(0,229,200,0.15)] rounded-2xl p-8 shadow-2xl">
+        <div className="border rounded-2xl p-8 shadow-2xl" style={{
+          backgroundColor: 'var(--bg-card)',
+          borderColor: 'var(--accent-border)',
+        }}>
           {/* Logo */}
           <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-xl bg-[rgba(0,229,200,0.1)] border border-[rgba(0,229,200,0.25)] flex items-center justify-center teal-pulse">
-                <Building2 className="w-7 h-7 text-accent" />
-              </div>
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{
+              backgroundColor: 'var(--accent-dim)',
+              border: '1px solid var(--accent-border)',
+            }}>
+              <Building2 className="w-7 h-7" style={{ color: 'var(--accent)' }} />
             </div>
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="font-display text-3xl  tracking-widest mb-1">ADMIN LOGIN</h1>
-            <p className=" text-xs uppercase tracking-widest">99HomeBazaar Control Panel</p>
+            <h1 className="font-display text-3xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>ADMIN LOGIN</h1>
+            <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>99HomeBazaar Control Panel</p>
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 bg-[rgba(248,113,113,0.06)] border border-[rgba(248,113,113,0.2)] rounded-xl flex items-start gap-3">
-              <AlertCircle className="w-4 h-4 text-[#f87171] shrink-0 mt-0.5" />
-              <p className="text-sm text-[#f87171]">{error}</p>
+            <div className="mb-5 p-3.5 rounded-xl flex items-start gap-3" style={{
+              backgroundColor: 'rgba(248,113,113,0.06)',
+              border: '1px solid rgba(248,113,113,0.2)',
+            }}>
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#f87171' }} />
+              <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             {/* Email */}
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-semibold  uppercase tracking-widest">
+              <label className="block text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 " />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="admin@99homebazaar.com"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#0a1a18] border border-[rgba(0,229,200,0.15)] rounded-xl  placeholder: text-sm transition-all focus:outline-none focus:border-[#00E5C8] focus:ring-1 focus:ring-[rgba(0,229,200,0.25)]"
+                  style={{
+                    width: '100%',
+                    paddingLeft: '40px', paddingRight: '16px', paddingTop: '10px', paddingBottom: '10px',
+                    backgroundColor: 'var(--input-bg)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: '12px',
+                    color: 'var(--text-primary)',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
                 />
               </div>
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-semibold  uppercase tracking-widest">
+              <label className="block text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 " />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#0a1a18] border border-[rgba(0,229,200,0.15)] rounded-xl  placeholder: text-sm transition-all focus:outline-none focus:border-[#00E5C8] focus:ring-1 focus:ring-[rgba(0,229,200,0.25)]"
+                  style={{
+                    width: '100%',
+                    paddingLeft: '40px', paddingRight: '40px', paddingTop: '10px', paddingBottom: '10px',
+                    backgroundColor: 'var(--input-bg)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: '12px',
+                    color: 'var(--text-primary)',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2  hover:text-accent transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -118,25 +147,42 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 bg-[#00E5C8] text-[#061210] font-semibold rounded-xl text-sm transition-all hover:bg-[#00ccb4] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[rgba(0,229,200,0.2)] tracking-wide"
+              style={{
+                width: '100%',
+                marginTop: '8px',
+                padding: '12px',
+                backgroundColor: 'var(--accent)',
+                color: 'var(--bg-page)',
+                fontWeight: 600,
+                borderRadius: '12px',
+                fontSize: '14px',
+                letterSpacing: '0.05em',
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.5 : 1,
+                transition: 'opacity 0.2s',
+              }}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-[#061210]/30 border-t-[#061210] rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 rounded-full animate-spin" style={{
+                    borderColor: 'var(--bg-page)',
+                    borderTopColor: 'transparent',
+                  }} />
                   Authenticating...
                 </span>
               ) : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-8 pt-5 border-t border-[rgba(0,229,200,0.08)] text-center">
-            <p className="text-[10px]  uppercase tracking-widest">
+          <div className="mt-8 pt-5 text-center" style={{ borderTop: '1px solid var(--accent-border)' }}>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
               99HomeBazaar Admin Panel v2.0
             </p>
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#00E5C8] to-transparent mt-8 opacity-50" />
+        <div className="h-px mt-8 opacity-50" style={{ background: 'linear-gradient(to right, transparent, var(--accent), transparent)' }} />
       </div>
     </div>
   );

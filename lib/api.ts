@@ -86,6 +86,28 @@ export const groupsApi = {
     api.delete(`/admin/groups/${groupId}/members/${adminId}`),
 };
 
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+export const auditLogsApi = {
+  list:        (params?: {
+    resource?:    string;
+    action?:      string;
+    performedBy?: string;
+    targetId?:    string;
+    ip?:          string;
+    from?:        string;
+    to?:          string;
+    page?:        number;
+    limit?:       number;
+  }) => api.get('/admin/audit-logs', { params }),
+  getOne:      (id: string) => api.get(`/admin/audit-logs/${id}`),
+  getMeta:     () => api.get('/admin/audit-logs/meta'),
+  update:      (id: string, data: { note?: string; flagged?: boolean }) =>
+    api.patch(`/admin/audit-logs/${id}`, data),
+  delete:      (id: string) => api.delete(`/admin/audit-logs/${id}`),
+  bulkDelete:  (data: { resource?: string; action?: string; before?: string }) =>
+    api.delete('/admin/audit-logs', { data }),
+};
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 export const statsApi = {
   get: () => api.get('/admin/stats'),

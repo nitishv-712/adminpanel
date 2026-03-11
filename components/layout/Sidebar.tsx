@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui';
 import {
   LayoutDashboard, Users, Home, MessageSquare,
   Mail, LogOut, Building2, ChevronRight, ShieldCheck,
-  Headphones, Star, Sun, Moon, X,
+  Headphones, Star, Sun, Moon, X, Notebook
 } from 'lucide-react';
 import { Resource, Action } from '@/types';
 import { useState, useEffect } from 'react';
@@ -30,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/reviews',         label: 'Reviews',         icon: Star,           resource: 'reviews',        action: 'read' },
   { href: '/newsletter',      label: 'Newsletter',      icon: Mail,           resource: 'newsletter',     action: 'read' },
   { href: '/admin-accounts',  label: 'Admin Accounts',  icon: ShieldCheck,    resource: 'adminUsers',     action: 'read' },
+  { href: '/auditLogs',       label: 'Audit Logs',      icon: Notebook,       resource: 'auditLogs',      action: 'read' },
 ];
 
 interface SidebarProps {

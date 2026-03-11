@@ -49,10 +49,10 @@ export default function PropertiesPage() {
     propertiesApi.list(params)
       .then(res => {
         const d = res.data;
-        const result = { data: d?.data ?? [], total: d?.total ?? 0 };
+        const result = { data: d?.data ?? [], total: d?.pagination.total ?? 0 };
         set(cacheKey, result);
         setProperties(result.data);
-        setTotal(result.total);
+        setTotal(d.pagination.total);
       })
       .catch(err => setError(err.response?.data?.message || 'Failed to load properties'))
       .finally(() => setLoading(false));

@@ -60,8 +60,8 @@ export default function SupportTicketsPage() {
     supportApi.list(params)
       .then(res => {
         const d: PaginatedResponse<SupportTicket> = res.data;
-        setTickets(d.data); setTotal(d.pagination.pages);
-        set(cacheKey, { data: d.data, total: d.pagination.pages });
+        setTickets(d.data); setTotal(d.pagination.total);
+        set(cacheKey, { data: d.data, total: d.pagination.total });
       })
       .finally(() => setLoading(false));
   }, [page, get, set, statusFilter, catFilter, priFilter]);

@@ -43,7 +43,7 @@ export default function UsersPage() {
     usersApi.list(params)
       .then(res => {
         const d = res.data;
-        const result = { data: d?.data ?? [], total: d?.total ?? 0 };
+        const result = { data: d?.data ?? [], total: d?.pagination.total ?? 0 };
         set(cacheKey, result);
         setUsers(result.data);
         setTotal(result.total);

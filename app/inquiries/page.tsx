@@ -49,8 +49,8 @@ export default function InquiriesPage() {
     inquiriesApi.list(params)
       .then(res => {
         const d: PaginatedResponse<Inquiry> = res.data;
-        setInquiries(d.data); setTotal(d.pagination.pages);
-        set(cacheKey, { data: d.data, total: d.pagination.pages });
+        setInquiries(d.data); setTotal(d.pagination.total);
+        set(cacheKey, { data: d.data, total: d.pagination.total });
       })
       .finally(() => setLoading(false));
   }, [page, get, set, statusFilter]);

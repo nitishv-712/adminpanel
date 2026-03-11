@@ -18,9 +18,7 @@ const asProperty = (v: string | ApiProperty): ApiProperty | null =>
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-0.5">
     {[1, 2, 3, 4, 5].map(i => (
-      <Star
-        key={i}
-        className="w-3 h-3"
+      <Star key={i} className="w-3 h-3"
         fill={i <= rating ? '#fbbf24' : 'transparent'}
         color={i <= rating ? '#fbbf24' : 'var(--text-muted)'}
       />
@@ -103,12 +101,13 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl tracking-widest mb-1"
+            style={{ color: 'var(--text-primary)' }}>
             REVIEWS
           </h1>
           <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
@@ -116,60 +115,51 @@ export default function ReviewsPage() {
           </p>
         </div>
         <div className="text-right">
-          <p className="font-display text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>{total}</p>
+          <p className="font-display text-2xl sm:text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>{total}</p>
           <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total Reviews</p>
         </div>
       </div>
 
       {/* Quick counts */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4 flex items-center gap-3">
-          <div style={{
-            width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-            backgroundColor: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shrink-0 flex items-center justify-center border"
+            style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--accent-border)' }}>
+            <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: 'var(--accent)' }} />
           </div>
-          <div>
-            <p className="font-display text-xl" style={{ color: 'var(--accent)' }}>{published}</p>
-            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Published</p>
+          <div className="min-w-0">
+            <p className="font-display text-lg sm:text-xl" style={{ color: 'var(--accent)' }}>{published}</p>
+            <p className="text-[9px] sm:text-[10px] uppercase tracking-widest truncate" style={{ color: 'var(--text-muted)' }}>Published</p>
           </div>
         </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <div style={{
-            width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-            backgroundColor: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Clock className="w-4 h-4" style={{ color: '#fbbf24' }} />
+        <Card className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shrink-0 flex items-center justify-center border"
+            style={{ backgroundColor: 'rgba(251,191,36,0.08)', borderColor: 'rgba(251,191,36,0.15)' }}>
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: '#fbbf24' }} />
           </div>
-          <div>
-            <p className="font-display text-xl" style={{ color: '#fbbf24' }}>{pending}</p>
-            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Pending</p>
+          <div className="min-w-0">
+            <p className="font-display text-lg sm:text-xl" style={{ color: '#fbbf24' }}>{pending}</p>
+            <p className="text-[9px] sm:text-[10px] uppercase tracking-widest truncate" style={{ color: 'var(--text-muted)' }}>Pending</p>
           </div>
         </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <div style={{
-            width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-            backgroundColor: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <XCircle className="w-4 h-4" style={{ color: '#f87171' }} />
+        <Card className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shrink-0 flex items-center justify-center border"
+            style={{ backgroundColor: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.15)' }}>
+            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: '#f87171' }} />
           </div>
-          <div>
-            <p className="font-display text-xl" style={{ color: '#f87171' }}>{rejected}</p>
-            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Rejected</p>
+          <div className="min-w-0">
+            <p className="font-display text-lg sm:text-xl" style={{ color: '#f87171' }}>{rejected}</p>
+            <p className="text-[9px] sm:text-[10px] uppercase tracking-widest truncate" style={{ color: 'var(--text-muted)' }}>Rejected</p>
           </div>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-3">
+      <Card className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <select
             value={statusFilter} onChange={e => setStatus(e.target.value)}
-            style={{ ...inputStyle, minWidth: '150px' }}
+            style={{ ...inputStyle, width: '100%' }}
             onFocus={e => e.target.style.borderColor = 'var(--accent)'}
             onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
           >
@@ -180,7 +170,7 @@ export default function ReviewsPage() {
           </select>
           <select
             value={ratingFilter} onChange={e => setRating(e.target.value)}
-            style={{ ...inputStyle, minWidth: '130px' }}
+            style={{ ...inputStyle, width: '100%' }}
             onFocus={e => e.target.style.borderColor = 'var(--accent)'}
             onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
           >
@@ -190,8 +180,8 @@ export default function ReviewsPage() {
         </div>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table — desktop */}
+      <Card className="hidden md:block">
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : reviews.length === 0 ? (
@@ -261,38 +251,97 @@ export default function ReviewsPage() {
         )}
       </Card>
 
+      {/* Cards — mobile */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : reviews.length === 0 ? (
+          <EmptyState icon={<Star className="w-7 h-7" />} title="No Reviews" description="No reviews match your filters." />
+        ) : (
+          <>
+            {reviews.map(r => {
+              const user     = asUser(r.user);
+              const property = asProperty(r.property);
+              return (
+                <Card key={r._id} className="p-4 space-y-3">
+                  {/* Top row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar firstName={user?.firstName} lastName={user?.lastName} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
+                      </div>
+                    </div>
+                    <StatusBadge value={r.status} />
+                  </div>
+
+                  {/* Rating + title */}
+                  <div>
+                    <StarRating rating={r.rating} />
+                    <p className="text-sm font-medium mt-1 truncate" style={{ color: 'var(--text-primary)' }}>{r.title}</p>
+                    {property && (
+                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {property.title}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(r.createdAt)}</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setDetail(r)}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => { setStatusTarget(r); setNewStatus(r.status); }}>
+                        Status
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(r)}>
+                        <Trash2 className="w-3.5 h-3.5" style={{ color: '#f87171' }} />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+            <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPage={setPage} />
+          </>
+        )}
+      </div>
+
       {/* Detail Modal */}
       <Modal isOpen={!!detail} onClose={() => setDetail(null)} title="Review Detail" size="md">
         {detail && (() => {
           const u = asUser(detail.user);
           return (
             <div className="space-y-4">
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
-                backgroundColor: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '12px',
-              }}>
+              <div className="flex items-center gap-3 p-3 rounded-xl border"
+                style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--accent-border)' }}>
                 <Avatar firstName={u?.firstName} lastName={u?.lastName} />
-                <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u?.firstName} {u?.lastName}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{u?.email}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u?.firstName} {u?.lastName}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u?.email}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div style={{ padding: '12px', backgroundColor: 'var(--accent-dim)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--border)' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>Rating</p>
                   <StarRating rating={detail.rating} />
                 </div>
-                <div style={{ padding: '12px', backgroundColor: 'var(--accent-dim)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--border)' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>Status</p>
                   <StatusBadge value={detail.status} />
                 </div>
               </div>
-              <div style={{ padding: '16px', backgroundColor: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+              <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--bg-mid)', borderColor: 'var(--border)' }}>
                 <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>{detail.title}</p>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{detail.comment}</p>
               </div>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Posted {formatDate(detail.createdAt)}</p>
-              <div className="flex gap-2 pt-1">
+              <div className="flex flex-wrap gap-2 pt-1">
                 {detail.status !== 'published' && (
                   <Button variant="secondary" size="sm" onClick={async () => {
                     await reviewsApi.updateStatus(detail._id, 'published');

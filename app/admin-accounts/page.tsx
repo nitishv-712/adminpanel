@@ -25,10 +25,10 @@ export default function AdminAccountsPage() {
   const [search, setSearch]   = useState('');
   const [roleFilter, setRole] = useState('');
 
-  const [editTarget, setEditTarget]   = useState<AdminUser | null>(null);
-  const [editRole, setEditRole]       = useState('');
-  const [editActive, setEditActive]   = useState(true);
-  const [saving, setSaving]           = useState(false);
+  const [editTarget, setEditTarget] = useState<AdminUser | null>(null);
+  const [editRole, setEditRole]     = useState('');
+  const [editActive, setEditActive] = useState(true);
+  const [saving, setSaving]         = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [deleting, setDeleting]         = useState(false);
@@ -71,20 +71,33 @@ export default function AdminAccountsPage() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    try { await adminAuthApi.deleteAdmin(deleteTarget._id); setDeleteTarget(null); invalidatePrefix('admin-accounts:'); fetch(true); }
-    finally { setDeleting(false); }
+    try {
+      await adminAuthApi.deleteAdmin(deleteTarget._id);
+      setDeleteTarget(null); invalidatePrefix('admin-accounts:'); fetch(true);
+    } finally { setDeleting(false); }
   };
 
   const totalPages = Math.ceil(total / limit);
   if (!isSuperAdmin) return null;
 
+  const inputStyle = {
+    backgroundColor: 'var(--input-bg)',
+    border: '1px solid var(--border-strong)',
+    borderRadius: '12px',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between pl-12 sm:pl-0 gap-3">
         <div>
-          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl tracking-widest mb-1"
+            style={{ color: 'var(--text-primary)' }}>
             ADMIN ACCOUNTS
           </h1>
           <p className="text-xs uppercase tracking-widest flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -92,18 +105,13 @@ export default function AdminAccountsPage() {
           </p>
         </div>
         <Button variant="primary" onClick={() => router.push('/admin-accounts/rolesgroups')}>
-          <Plus className="w-4 h-4" /> Add Admin
+          <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Admin</span>
         </Button>
       </div>
 
-      {/* Warning notice */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-start', gap: '12px',
-        padding: '16px',
-        backgroundColor: 'rgba(251,191,36,0.06)',
-        border: '1px solid rgba(251,191,36,0.15)',
-        borderRadius: '12px',
-      }}>
+      {/* Warning */}
+      <div className="flex items-start gap-3 p-3 sm:p-4 rounded-xl border"
+        style={{ backgroundColor: 'rgba(251,191,36,0.06)', borderColor: 'rgba(251,191,36,0.15)' }}>
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Admin accounts have access to the full admin panel. Superadmins can also manage other admin accounts.
@@ -112,7 +120,7 @@ export default function AdminAccountsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
@@ -120,35 +128,16 @@ export default function AdminAccountsPage() {
               placeholder="Search admin name or email..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{
-                width: '100%',
-                paddingLeft: '36px', paddingRight: '16px', paddingTop: '8px', paddingBottom: '8px',
-                backgroundColor: 'var(--input-bg)',
-                border: '1px solid var(--border-strong)',
-                borderRadius: '12px',
-                color: 'var(--text-primary)',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-              }}
+              style={{ ...inputStyle, width: '100%', paddingLeft: '36px', paddingRight: '16px', paddingTop: '8px', paddingBottom: '8px' }}
               onFocus={e => e.target.style.borderColor = 'var(--accent)'}
               onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
             />
           </div>
           <select
-            value={roleFilter}
-            onChange={e => setRole(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: 'var(--input-bg)',
-              border: '1px solid var(--border-strong)',
-              borderRadius: '12px',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-              outline: 'none',
-              minWidth: '150px',
-              transition: 'border-color 0.2s',
-            }}
+            value={roleFilter} onChange={e => setRole(e.target.value)}
+            style={{ ...inputStyle, padding: '8px 12px', width: '100%' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
           >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
@@ -157,8 +146,8 @@ export default function AdminAccountsPage() {
         </div>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table — desktop */}
+      <Card className="hidden md:block">
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : admins.length === 0 ? (
@@ -205,8 +194,7 @@ export default function AdminAccountsPage() {
                       <Td>
                         {createdBy
                           ? <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{createdBy.firstName} {createdBy.lastName}</span>
-                          : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
-                        }
+                          : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>}
                       </Td>
                       <Td><span className="text-xs" style={{ color: 'var(--text-muted)' }}>{a.lastLoginAt ? formatRelativeTime(a.lastLoginAt) : 'Never'}</span></Td>
                       <Td>
@@ -231,21 +219,73 @@ export default function AdminAccountsPage() {
         )}
       </Card>
 
+      {/* Cards — mobile */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : admins.length === 0 ? (
+          <EmptyState icon={<ShieldCheck className="w-7 h-7" />} title="No Admins" description="No admin accounts found." />
+        ) : (
+          <>
+            {admins.map(a => {
+              const createdBy = typeof a.createdBy === 'object' && a.createdBy !== null ? a.createdBy as AdminUser : null;
+              return (
+                <Card key={a._id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Avatar firstName={a.firstName} lastName={a.lastName} avatar={a.avatar} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{a.firstName} {a.lastName}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{a.email}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-lg font-medium uppercase tracking-widest shrink-0"
+                      style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }}>
+                      {typeof a.role === 'object' ? a.role.label : a.role}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs flex-wrap gap-1">
+                    {a.isActive
+                      ? <span className="flex items-center gap-1" style={{ color: 'var(--accent)' }}><CheckCircle className="w-3.5 h-3.5" />Active</span>
+                      : <span className="flex items-center gap-1" style={{ color: '#f87171' }}><XCircle className="w-3.5 h-3.5" />Inactive</span>
+                    }
+                    {createdBy && (
+                      <span style={{ color: 'var(--text-muted)' }}>By {createdBy.firstName} {createdBy.lastName}</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      {a.lastLoginAt ? `Last login ${formatRelativeTime(a.lastLoginAt)}` : 'Never logged in'}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditTarget(a); setEditRole(typeof a.role === 'object' ? a.role.name : a.role); setEditActive(a.isActive); }}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(a)}>
+                        <Trash2 className="w-3.5 h-3.5" style={{ color: '#f87171' }} />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+            <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPage={setPage} />
+          </>
+        )}
+      </div>
+
       {/* Edit Modal */}
       <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title="Update Admin" size="sm">
         <div className="space-y-4">
           {editTarget && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '12px',
-              backgroundColor: 'var(--accent-dim)',
-              border: '1px solid var(--accent-border)',
-              borderRadius: '12px',
-            }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl border"
+              style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--accent-border)' }}>
               <Avatar firstName={editTarget.firstName} lastName={editTarget.lastName} />
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{editTarget.firstName} {editTarget.lastName}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{editTarget.email}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{editTarget.firstName} {editTarget.lastName}</p>
+                <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{editTarget.email}</p>
               </div>
             </div>
           )}
@@ -253,33 +293,19 @@ export default function AdminAccountsPage() {
             <option value="admin">Admin</option>
             <option value="superadmin">Super Admin</option>
           </Select>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px',
-            backgroundColor: 'var(--accent-dim)',
-            border: '1px solid var(--accent-border)',
-            borderRadius: '12px',
-          }}>
+          <div className="flex items-center justify-between p-3 rounded-xl border"
+            style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--accent-border)' }}>
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Account Active</span>
-            <button
-              onClick={() => setEditActive(!editActive)}
+            <button onClick={() => setEditActive(!editActive)}
               style={{
-                width: '40px', height: '22px',
-                borderRadius: '999px',
+                width: '40px', height: '22px', borderRadius: '999px', cursor: 'pointer',
                 backgroundColor: editActive ? 'var(--accent)' : 'var(--bg-mid)',
-                border: '1px solid var(--border-strong)',
-                position: 'relative',
-                transition: 'background-color 0.2s',
-                cursor: 'pointer',
-              }}
-            >
+                border: '1px solid var(--border-strong)', position: 'relative', transition: 'background-color 0.2s',
+              }}>
               <span style={{
-                position: 'absolute', top: '2px',
-                left: editActive ? '20px' : '2px',
-                width: '16px', height: '16px',
-                borderRadius: '50%',
-                backgroundColor: 'white',
-                transition: 'left 0.2s',
+                position: 'absolute', top: '2px', left: editActive ? '20px' : '2px',
+                width: '16px', height: '16px', borderRadius: '50%',
+                backgroundColor: 'white', transition: 'left 0.2s',
               }} />
             </button>
           </div>
@@ -292,14 +318,10 @@ export default function AdminAccountsPage() {
         </div>
       </Modal>
 
-      <ConfirmModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-        title="Delete Admin Account"
+      <ConfirmModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete} title="Delete Admin Account"
         message={`Delete "${deleteTarget?.firstName} ${deleteTarget?.lastName}"? They will lose all admin access.`}
-        loading={deleting}
-      />
+        loading={deleting} />
     </div>
   );
 }

@@ -139,30 +139,34 @@ export default function SupportTicketsPage() {
     fontSize: '14px',
     outline: 'none',
     transition: 'border-color 0.2s',
+    width: '100%',
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl tracking-widest mb-1"
+            style={{ color: 'var(--text-primary)' }}>
             SUPPORT TICKETS
           </h1>
           <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
             Customer support management
           </p>
         </div>
-        <div className="text-right">
-          <p className="font-display text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>{formatNumber(total)}</p>
+        <div className="text-right shrink-0">
+          <p className="font-display text-2xl sm:text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>
+            {formatNumber(total)}
+          </p>
           <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total Tickets</p>
         </div>
       </div>
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           <StatCard label="Open"          value={stats.openTickets}         icon={<AlertTriangle className="w-4 h-4" />} accent />
           <StatCard label="In Progress"   value={stats.inProgressTickets}   icon={<Clock className="w-4 h-4" />} />
           <StatCard label="Resolved"      value={stats.resolvedTickets}     icon={<CheckCircle className="w-4 h-4" />} accent />
@@ -171,11 +175,11 @@ export default function SupportTicketsPage() {
       )}
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-3">
+      <Card className="p-3 sm:p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             {
-              value: statusFilter, onChange: (v: string) => setStatus(v), minWidth: '140px',
+              value: statusFilter, onChange: (v: string) => setStatus(v),
               options: [
                 { value: '', label: 'All Status' },
                 { value: 'open', label: 'Open' },
@@ -185,7 +189,7 @@ export default function SupportTicketsPage() {
               ],
             },
             {
-              value: catFilter, onChange: (v: string) => setCat(v), minWidth: '140px',
+              value: catFilter, onChange: (v: string) => setCat(v),
               options: [
                 { value: '', label: 'All Categories' },
                 { value: 'technical', label: 'Technical' },
@@ -196,7 +200,7 @@ export default function SupportTicketsPage() {
               ],
             },
             {
-              value: priFilter, onChange: (v: string) => setPri(v), minWidth: '130px',
+              value: priFilter, onChange: (v: string) => setPri(v),
               options: [
                 { value: '', label: 'All Priority' },
                 { value: 'high', label: 'High' },
@@ -209,7 +213,7 @@ export default function SupportTicketsPage() {
               key={i}
               value={sel.value}
               onChange={e => sel.onChange(e.target.value)}
-              style={{ ...inputStyle, minWidth: sel.minWidth }}
+              style={inputStyle}
               onFocus={e => e.target.style.borderColor = 'var(--accent)'}
               onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
             >
@@ -219,8 +223,8 @@ export default function SupportTicketsPage() {
         </div>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table — desktop */}
+      <Card className="hidden md:block">
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : tickets.length === 0 ? (
@@ -296,6 +300,77 @@ export default function SupportTicketsPage() {
         )}
       </Card>
 
+      {/* Cards — mobile */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : tickets.length === 0 ? (
+          <EmptyState icon={<Headphones className="w-7 h-7" />} title="No Tickets" description="No support tickets match your filters." />
+        ) : (
+          <>
+            {tickets.map(t => {
+              const user = asUser(t.user);
+              return (
+                <Card key={t._id} className="p-4 space-y-3">
+                  {/* Subject + status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium leading-snug flex-1 min-w-0"
+                      style={{ color: 'var(--text-primary)' }}>
+                      {t.subject}
+                    </p>
+                    <StatusBadge value={t.status} />
+                  </div>
+
+                  {/* User */}
+                  {user && (
+                    <div className="flex items-center gap-2">
+                      <Avatar firstName={user.firstName} lastName={user.lastName} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-xs truncate" style={{ color: 'var(--text-primary)' }}>
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{user.email}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <StatusBadge value={t.category} />
+                    <StatusBadge value={t.priority} />
+                    <span className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      <MessageSquare className="w-3 h-3" />{t.messageCount} msgs
+                    </span>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      {formatRelativeTime(t.lastMessageAt)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => openDetail(t)}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => { setStatusTarget(t); setNewStatus(t.status); }}>
+                        Status
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setPriTarget(t); setNewPri(t.priority); }}>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(t)}>
+                        <Trash2 className="w-3.5 h-3.5" style={{ color: '#f87171' }} />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+            <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPage={setPage} />
+          </>
+        )}
+      </div>
+
       {/* Detail Modal */}
       <Modal isOpen={!!detail || detailLoading} onClose={() => setDetail(null)} title="Ticket Detail" size="lg">
         {detailLoading ? (
@@ -303,59 +378,52 @@ export default function SupportTicketsPage() {
         ) : detail ? (
           <div className="space-y-4">
             {/* Meta */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 { label: 'Status',   content: <StatusBadge value={detail.ticket.status} /> },
                 { label: 'Priority', content: <StatusBadge value={detail.ticket.priority} /> },
                 { label: 'Category', content: <StatusBadge value={detail.ticket.category} /> },
               ].map(({ label, content }) => (
-                <div key={label} style={{
-                  padding: '12px',
-                  backgroundColor: 'var(--accent-dim)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                <div key={label} className="p-2 sm:p-3 rounded-xl border"
+                  style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--border)' }}>
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-widest mb-1"
+                    style={{ color: 'var(--text-muted)' }}>{label}</p>
                   {content}
                 </div>
               ))}
             </div>
 
-            <div style={{
-              padding: '12px',
-              backgroundColor: 'var(--accent-dim)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-            }}>
+            <div className="p-3 rounded-xl border"
+              style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--border)' }}>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>Subject</p>
               <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{detail.ticket.subject}</p>
             </div>
 
             {/* Messages */}
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-56 sm:max-h-64 overflow-y-auto pr-1">
               {detail.messages.length === 0 ? (
                 <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>No messages yet.</p>
               ) : detail.messages.map(msg => (
-                <div key={msg._id} style={{
-                  padding: '12px', borderRadius: '12px', fontSize: '12px',
-                  backgroundColor: msg.isAdmin ? 'var(--accent-dim)' : 'var(--bg-mid)',
-                  border: `1px solid ${msg.isAdmin ? 'var(--accent-border)' : 'var(--border)'}`,
-                }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
+                <div key={msg._id} className="p-3 rounded-xl text-xs"
+                  style={{
+                    backgroundColor: msg.isAdmin ? 'var(--accent-dim)' : 'var(--bg-mid)',
+                    border: `1px solid ${msg.isAdmin ? 'var(--accent-border)' : 'var(--border)'}`,
+                  }}>
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <span className="font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
                       {msg.isAdmin ? '🛡 Admin' : (() => {
                         const s = asUser(msg.sender as any);
                         return s ? `${s.firstName} ${s.lastName}` : 'User';
                       })()}
                     </span>
-                    <span style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(msg.createdAt)}</span>
+                    <span className="shrink-0" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(msg.createdAt)}</span>
                   </div>
                   <p className="leading-relaxed" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
                 </div>
               ))}
             </div>
 
-            {/* Reply — only if not closed */}
+            {/* Reply */}
             {detail.ticket.status !== 'closed' && (
               <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
                 <Textarea
@@ -412,7 +480,6 @@ export default function SupportTicketsPage() {
         </div>
       </Modal>
 
-      {/* Delete Confirm */}
       <ConfirmModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}

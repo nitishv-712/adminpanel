@@ -44,9 +44,10 @@ export default function RolesGroupsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between pl-12 sm:pl-0">
         <div>
-          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl tracking-widest mb-1"
+            style={{ color: 'var(--text-primary)' }}>
             ROLES & GROUPS
           </h1>
           <p className="text-xs uppercase tracking-widest flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -56,24 +57,27 @@ export default function RolesGroupsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ backgroundColor: 'var(--bg-mid)', border: '1px solid var(--border-strong)' }}>
-        {([
-          { key: 'roles',  icon: <ShieldCheck className="w-3.5 h-3.5" />, label: 'Roles'        },
-          { key: 'groups', icon: <Users className="w-3.5 h-3.5" />,       label: 'Groups'       },
-          { key: 'admins', icon: <UserCog className="w-3.5 h-3.5" />,     label: 'Create Admin' },
-        ] as { key: Tab; icon: React.ReactNode; label: string }[]).map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className="px-5 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest transition-all"
-            style={{
-              backgroundColor: tab === t.key ? 'var(--accent)' : 'transparent',
-              color: tab === t.key ? 'var(--bg-page)' : 'var(--text-muted)',
-            }}
-          >
-            <span className="flex items-center gap-1.5">{t.icon}{t.label}</span>
-          </button>
-        ))}
+      <div className="overflow-x-auto pb-1">
+        <div className="flex gap-1 p-1 rounded-xl w-fit min-w-full sm:min-w-0"
+          style={{ backgroundColor: 'var(--bg-mid)', border: '1px solid var(--border-strong)' }}>
+          {([
+            { key: 'roles',  icon: <ShieldCheck className="w-3.5 h-3.5" />, label: 'Roles'        },
+            { key: 'groups', icon: <Users className="w-3.5 h-3.5" />,       label: 'Groups'       },
+            { key: 'admins', icon: <UserCog className="w-3.5 h-3.5" />,     label: 'Create Admin' },
+          ] as { key: Tab; icon: React.ReactNode; label: string }[]).map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className="flex-1 sm:flex-none px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest transition-all whitespace-nowrap"
+              style={{
+                backgroundColor: tab === t.key ? 'var(--accent)' : 'transparent',
+                color: tab === t.key ? 'var(--bg-page)' : 'var(--text-muted)',
+              }}
+            >
+              <span className="flex items-center justify-center gap-1.5">{t.icon}{t.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {tab === 'roles'  && <RolesTab />}

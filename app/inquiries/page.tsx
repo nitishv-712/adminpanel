@@ -26,18 +26,14 @@ export default function InquiriesPage() {
 
   const [detail, setDetail]            = useState<{ inquiry: Inquiry; messages: InquiryMessage[] } | null>(null);
   const [detailLoading, setDetailLoad] = useState(false);
-
   const [statusTarget, setStatusTarget] = useState<Inquiry | null>(null);
   const [newStatus, setNewStatus]       = useState('');
   const [saving, setSaving]             = useState(false);
-
-  const [replyText, setReplyText] = useState('');
-  const [replying, setReplying]   = useState(false);
-
-  const [editMsg, setEditMsg]       = useState<InquiryMessage | null>(null);
-  const [editText, setEditText]     = useState('');
-  const [editSaving, setEditSaving] = useState(false);
-
+  const [replyText, setReplyText]       = useState('');
+  const [replying, setReplying]         = useState(false);
+  const [editMsg, setEditMsg]           = useState<InquiryMessage | null>(null);
+  const [editText, setEditText]         = useState('');
+  const [editSaving, setEditSaving]     = useState(false);
   const [deleteMsgTarget, setDeleteMsgTarget] = useState<InquiryMessage | null>(null);
   const [deletingMsg, setDeletingMsg]         = useState(false);
 
@@ -140,32 +136,34 @@ export default function InquiriesPage() {
     fontSize: '14px',
     outline: 'none',
     transition: 'border-color 0.2s',
+    width: '100%',
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-4xl tracking-widest mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl tracking-widest mb-1"
+            style={{ color: 'var(--text-primary)' }}>
             INQUIRIES
           </h1>
           <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
             All buyer–seller conversations
           </p>
         </div>
-        <div className="text-right">
-          <p className="font-display text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>{total}</p>
+        <div className="text-right shrink-0">
+          <p className="font-display text-2xl sm:text-3xl tracking-wide" style={{ color: 'var(--accent)' }}>{total}</p>
           <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total</p>
         </div>
       </div>
 
       {/* Filter */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <select
           value={statusFilter} onChange={e => setStatus(e.target.value)}
-          style={{ ...inputStyle, minWidth: '160px' }}
+          style={inputStyle}
           onFocus={e => e.target.style.borderColor = 'var(--accent)'}
           onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
         >
@@ -175,8 +173,8 @@ export default function InquiriesPage() {
         </select>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table — desktop */}
+      <Card className="hidden md:block">
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : inquiries.length === 0 ? (
@@ -221,8 +219,7 @@ export default function InquiriesPage() {
                       <Td>
                         {owner
                           ? <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{owner.firstName} {owner.lastName}</p>
-                          : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
-                        }
+                          : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>}
                       </Td>
                       <Td><StatusBadge value={inq.status} /></Td>
                       <Td><span className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(inq.lastMessageAt)}</span></Td>
@@ -248,99 +245,142 @@ export default function InquiriesPage() {
         )}
       </Card>
 
-      {/* Detail / Thread Modal */}
+      {/* Cards — mobile */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : inquiries.length === 0 ? (
+          <EmptyState icon={<MessageSquare className="w-7 h-7" />} title="No Inquiries" description="No inquiries match your filter." />
+        ) : (
+          <>
+            {inquiries.map(inq => {
+              const prop  = asProp(inq.property as any);
+              const user  = asUser(inq.user as any);
+              const owner = asUser(inq.owner as any);
+              return (
+                <Card key={inq._id} className="p-4 space-y-3">
+                  {/* Property */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                        {prop?.title ?? (typeof inq.property === 'string' ? inq.property : '—')}
+                      </p>
+                      {prop?.address?.city && (
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{prop.address.city}</p>
+                      )}
+                    </div>
+                    <StatusBadge value={inq.status} />
+                  </div>
+
+                  {/* Buyer + Owner */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>Buyer</p>
+                      {user
+                        ? <div className="flex items-center gap-1.5">
+                            <Avatar firstName={user.firstName} lastName={user.lastName} size="sm" />
+                            <span className="truncate" style={{ color: 'var(--text-primary)' }}>{user.firstName} {user.lastName}</span>
+                          </div>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      }
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>Owner</p>
+                      {owner
+                        ? <span style={{ color: 'var(--text-secondary)' }}>{owner.firstName} {owner.lastName}</span>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      }
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(inq.lastMessageAt)}</span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => openDetail(inq)}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => { setStatusTarget(inq); setNewStatus(inq.status); }}>
+                        Status
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+            <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPage={setPage} />
+          </>
+        )}
+      </div>
+
+      {/* Detail Modal */}
       <Modal isOpen={!!detail || detailLoading} onClose={() => setDetail(null)} title="Inquiry Thread" size="lg">
         {detailLoading ? (
           <div className="flex justify-center py-8"><Spinner size="lg" /></div>
         ) : detail ? (
           <div className="space-y-4">
-            {/* Meta */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {[
                 { label: 'Status', content: <StatusBadge value={detail.inquiry.status} /> },
-                { label: 'Opened',  content: <p className="text-xs" style={{ color: 'var(--text-primary)' }}>{formatDate(detail.inquiry.createdAt)}</p> },
+                { label: 'Opened', content: <p className="text-xs" style={{ color: 'var(--text-primary)' }}>{formatDate(detail.inquiry.createdAt)}</p> },
               ].map(({ label, content }) => (
-                <div key={label} style={{
-                  padding: '12px',
-                  backgroundColor: 'var(--accent-dim)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                <div key={label} className="p-2 sm:p-3 rounded-xl border"
+                  style={{ backgroundColor: 'var(--accent-dim)', borderColor: 'var(--border)' }}>
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
                   {content}
                 </div>
               ))}
             </div>
 
-            {/* Messages */}
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-56 sm:max-h-72 overflow-y-auto pr-1">
               {detail.messages.length === 0 ? (
                 <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>No messages yet.</p>
               ) : detail.messages.map(msg => {
                 const sender  = asUser(msg.sender as any);
                 const isAdmin = msg.role === 'admin';
                 return (
-                  <div key={msg._id} style={{
-                    padding: '12px', borderRadius: '12px', fontSize: '12px',
-                    backgroundColor: isAdmin ? 'var(--accent-dim)' : 'var(--bg-mid)',
-                    border: `1px solid ${isAdmin ? 'var(--accent-border)' : 'var(--border)'}`,
-                  }}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
+                  <div key={msg._id} className="p-3 rounded-xl text-xs"
+                    style={{
+                      backgroundColor: isAdmin ? 'var(--accent-dim)' : 'var(--bg-mid)',
+                      border: `1px solid ${isAdmin ? 'var(--accent-border)' : 'var(--border)'}`,
+                    }}>
+                    <div className="flex items-start justify-between gap-2 mb-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {sender && <Avatar firstName={sender.firstName} lastName={sender.lastName} size="sm" />}
                         <span className="font-medium capitalize" style={{ color: 'var(--text-secondary)' }}>
                           {sender ? `${sender.firstName} ${sender.lastName}` : '—'}
                           <span className="ml-1.5 opacity-60">({msg.role})</span>
                         </span>
                         {msg.isEditedByAdmin && (
-                          <span style={{
-                            fontSize: '10px', color: '#fbbf24',
-                            border: '1px solid rgba(251,191,36,0.2)',
-                            padding: '2px 6px', borderRadius: '999px',
-                          }}>edited</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full border"
+                            style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.2)' }}>edited</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          title={`${msg.visibleToUser ? 'Hide from' : 'Show to'} user`}
-                          onClick={() => handleToggleVisibility(msg, 'visibleToUser')}
-                          style={{
-                            padding: '4px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer',
-                            color: msg.visibleToUser ? 'var(--accent)' : 'var(--text-muted)',
-                            transition: 'color 0.15s',
-                          }}
-                        >
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button title="Toggle user visibility" onClick={() => handleToggleVisibility(msg, 'visibleToUser')}
+                          className="p-1 rounded-lg transition-colors"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: msg.visibleToUser ? 'var(--accent)' : 'var(--text-muted)' }}>
                           <EyeOff className="w-3 h-3" />
                         </button>
-                        <button
-                          title="Edit message"
-                          onClick={() => { setEditMsg(msg); setEditText(msg.text); }}
-                          style={{
-                            padding: '4px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-muted)', transition: 'color 0.15s',
-                          }}
+                        <button title="Edit" onClick={() => { setEditMsg(msg); setEditText(msg.text); }}
+                          className="p-1 rounded-lg"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                           onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                        >
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
                           <Edit2 className="w-3 h-3" />
                         </button>
-                        <button
-                          title="Delete message"
-                          onClick={() => setDeleteMsgTarget(msg)}
-                          style={{
-                            padding: '4px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-muted)', transition: 'color 0.15s',
-                          }}
+                        <button title="Delete" onClick={() => setDeleteMsgTarget(msg)}
+                          className="p-1 rounded-lg"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                           onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                        >
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
                           <Trash2 className="w-3 h-3" />
                         </button>
                         <span className="ml-1" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(msg.createdAt)}</span>
                       </div>
                     </div>
                     <p className="leading-relaxed" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
-                    <div className="mt-1.5 flex gap-2" style={{ fontSize: '10px' }}>
+                    <div className="mt-1.5 flex gap-2 flex-wrap" style={{ fontSize: '10px' }}>
                       <span style={{ color: msg.visibleToUser ? 'var(--accent)' : 'var(--text-muted)' }}>
                         {msg.visibleToUser ? '✓' : '✗'} Visible to buyer
                       </span>
@@ -353,15 +393,9 @@ export default function InquiriesPage() {
               })}
             </div>
 
-            {/* Reply box */}
             <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-              <Textarea
-                label="Admin Reply"
-                placeholder="Type your message..."
-                value={replyText}
-                onChange={e => setReplyText(e.target.value)}
-                rows={3}
-              />
+              <Textarea label="Admin Reply" placeholder="Type your message..." value={replyText}
+                onChange={e => setReplyText(e.target.value)} rows={3} />
               <div className="flex justify-end mt-2">
                 <Button variant="primary" size="sm" onClick={handleSendReply} disabled={replying || !replyText.trim()}>
                   <Send className="w-3.5 h-3.5" />
@@ -373,7 +407,6 @@ export default function InquiriesPage() {
         ) : null}
       </Modal>
 
-      {/* Status Modal */}
       <Modal isOpen={!!statusTarget} onClose={() => setStatusTarget(null)} title="Update Status" size="sm">
         <div className="space-y-4">
           <Select label="Status" value={newStatus} onChange={e => setNewStatus(e.target.value)}>
@@ -389,7 +422,6 @@ export default function InquiriesPage() {
         </div>
       </Modal>
 
-      {/* Edit Message Modal */}
       <Modal isOpen={!!editMsg} onClose={() => setEditMsg(null)} title="Edit Message" size="sm">
         <div className="space-y-4">
           <Textarea label="Message" value={editText} onChange={e => setEditText(e.target.value)} rows={4} />
@@ -402,15 +434,9 @@ export default function InquiriesPage() {
         </div>
       </Modal>
 
-      {/* Delete Message Confirm */}
-      <ConfirmModal
-        isOpen={!!deleteMsgTarget}
-        onClose={() => setDeleteMsgTarget(null)}
-        onConfirm={handleDeleteMsg}
-        title="Delete Message"
-        message="Delete this message permanently? This cannot be undone."
-        loading={deletingMsg}
-      />
+      <ConfirmModal isOpen={!!deleteMsgTarget} onClose={() => setDeleteMsgTarget(null)}
+        onConfirm={handleDeleteMsg} title="Delete Message"
+        message="Delete this message permanently? This cannot be undone." loading={deletingMsg} />
     </div>
   );
 }

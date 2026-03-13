@@ -180,3 +180,13 @@ export const reviewsApi = {
     api.patch(`/admin/reviews/${id}/status`, { status }),
   delete:       (id: string) => api.delete(`/admin/reviews/${id}`),
 };
+
+// ─── Leads ──────────────────────────────────────────────────────────────────
+export const leadsApi = {
+  list:        (params?: { page?: number; limit?: number; viewed?: 'true' | 'false' | 'all' }) =>
+    api.get('/admin/leads', { params }),
+  markViewed:  (id: string) =>
+    api.patch(`/admin/leads/${id}/viewed`),
+  delete:      (id: string) =>
+    api.delete(`/admin/leads/${id}`),
+};

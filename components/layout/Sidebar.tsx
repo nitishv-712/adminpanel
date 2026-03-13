@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui';
 import {
   LayoutDashboard, Users, Home, MessageSquare,
   Mail, LogOut, Building2, ChevronRight, ShieldCheck,
-  Headphones, Star, Sun, Moon, X, Notebook
+  Headphones, Star, Sun, Moon, X, Notebook, Timer
 } from 'lucide-react';
 import { Resource, Action } from '@/types';
 import { useState, useEffect } from 'react';
@@ -23,6 +23,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/leads',           label: 'Leads',           icon: Timer,          resource: 'leads',          action: 'read' },
   { href: '/properties',      label: 'Properties',      icon: Home,           resource: 'properties',     action: 'read' },
   { href: '/users',           label: 'Web Users',       icon: Users,          resource: 'users',          action: 'read' },
   { href: '/inquiries',       label: 'Inquiries',       icon: MessageSquare,  resource: 'inquiries',      action: 'read' },

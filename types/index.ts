@@ -25,7 +25,7 @@ export type Resource =
   | 'users' | 'adminUsers' | 'properties' | 'reviews'
   | 'inquiries' | 'messages' | 'supportTickets' | 'ticketMessages'
   | 'newsletter' | 'comparisons' | 'savedSearches' | 'searchHistory'
-  | 'otp' | 'auditLogs';
+  | 'otp' | 'auditLogs' | 'leads';
 
 export type Action =
   | 'read' | 'create' | 'update' | 'delete'
@@ -311,6 +311,38 @@ export interface SupportTicketStats {
   highPriorityTickets: number;
   averageResolutionTimeHours: number;
 }
+
+
+export type LeadIntent = 'rent' | 'buy';
+ 
+export interface ApiLead {
+  _id: string;
+  intent:    LeadIntent;
+  phone:     string;
+  address:   string;
+  placeId?:  string;
+  city?:     string;
+  state?:    string;
+  viewed:    boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+ 
+export type Lead = ApiLead;
+ 
+export interface LeadPaginatedResponse {
+  success: boolean;
+  data: ApiLead[];
+  pagination: {
+    total:       number;
+    page:        number;
+    limit:       number;
+    totalPages:  number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+ 
 
 // ─── Aliases ──────────────────────────────────────────────────────────────────
 
